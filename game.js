@@ -380,10 +380,29 @@ class MicrobiologyDragDropGame {
             const touch = e.touches[0];
             
             if (isDragging) {
-                // Move the card with the touch immediately using fixed positioning
-                card.style.left = (touch.clientX - touchStartX + originalRect.left) + 'px';
-                card.style.top = (touch.clientY - touchStartY + originalRect.top) + 'px';
+                // Position card centered on finger
+                const cardWidth = originalRect.width;
+                const cardHeight = originalRect.height;
+                card.style.left = (touch.clientX - cardWidth / 2) + 'px';
+                card.style.top = (touch.clientY - cardHeight / 2) + 'px';
                 card.style.zIndex = '9999';
+                
+                // Temporarily hide the dragged card to check what's underneath
+                card.style.visibility = 'hidden';
+                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                card.style.visibility = 'visible';
+                
+                const organismCard = elementBelow?.closest('.organism-card');
+                
+                // Remove highlight from all organism cards
+                document.querySelectorAll('.organism-card').forEach(org => {
+                    org.classList.remove('drag-over');
+                });
+                
+                // Add highlight to organism card under finger
+                if (organismCard) {
+                    organismCard.classList.add('drag-over');
+                }
             }
         }, { passive: false });
         
@@ -392,7 +411,11 @@ class MicrobiologyDragDropGame {
             
             if (isDragging) {
                 const touch = e.changedTouches[0];
+                
+                // Temporarily hide the dragged card to check what's underneath
+                card.style.visibility = 'hidden';
                 const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                card.style.visibility = 'visible';
                 
                 // Find the organism card that was dropped on
                 const organismCard = elementBelow?.closest('.organism-card');
@@ -403,6 +426,11 @@ class MicrobiologyDragDropGame {
                 } else {
                     console.log('No organism card found at drop location');
                 }
+                
+                // Clear all drag-over highlights
+                document.querySelectorAll('.organism-card').forEach(org => {
+                    org.classList.remove('drag-over');
+                });
                 
                 // Reset card position and restore to original container
                 card.style.position = '';
