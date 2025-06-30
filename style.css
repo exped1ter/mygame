@@ -244,7 +244,7 @@ h1 {
 .characteristic-card.dragging {
     opacity: 0.8;
     transform: rotate(5deg) scale(1.05);
-    z-index: 1000;
+    z-index: 9999;
     transition: none;
 }
 
@@ -263,6 +263,7 @@ h1 {
 .characteristic-card.dragging {
     transition: none !important;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
+    z-index: 9999 !important;
 }
 
 .characteristic-card.matched {

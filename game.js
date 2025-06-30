@@ -370,7 +370,7 @@ class MicrobiologyDragDropGame {
             if (isDragging) {
                 // Move the card with the touch immediately
                 card.style.transform = `translate(${touch.clientX - touchStartX}px, ${touch.clientY - touchStartY}px)`;
-                card.style.zIndex = '1000';
+                card.style.zIndex = '9999';
             }
         }, { passive: false });
         
