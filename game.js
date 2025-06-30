@@ -8,6 +8,9 @@ class MicrobiologyDragDropGame {
         this.draggedElement = null;
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
+        // Prevent viewport changes on mobile
+        this.preventViewportChanges();
+        
         // Pool system for organisms and their characteristics
         this.organismPool = [];
         this.characteristicPool = [];
@@ -432,6 +435,9 @@ class MicrobiologyDragDropGame {
                     org.classList.remove('drag-over');
                 });
                 
+                // Immediately hide the dragged card to prevent visual artifacts
+                card.style.display = 'none';
+                
                 // Reset card position and restore to original container
                 card.style.position = '';
                 card.style.left = '';
@@ -439,11 +445,16 @@ class MicrobiologyDragDropGame {
                 card.style.width = '';
                 card.style.height = '';
                 card.style.zIndex = '';
+                card.style.visibility = '';
                 
                 // Move card back to characteristics container
                 const characteristicsContainer = document.getElementById('characteristicsContainer');
                 if (characteristicsContainer && !card.classList.contains('matched')) {
                     characteristicsContainer.appendChild(card);
+                    // Restore display after moving back to container
+                    setTimeout(() => {
+                        card.style.display = '';
+                    }, 10);
                 }
             }
             
@@ -525,7 +536,10 @@ class MicrobiologyDragDropGame {
             
             // Remove the characteristic card after animation
             setTimeout(() => {
-                characteristicCard.remove();
+                // Ensure the card is completely removed and doesn't cause layout shifts
+                if (characteristicCard.parentNode) {
+                    characteristicCard.parentNode.removeChild(characteristicCard);
+                }
             }, 300);
             
             // Return organism card to normal after 1 second
@@ -781,6 +795,40 @@ class MicrobiologyDragDropGame {
         document.getElementById('score').textContent = this.score;
         document.getElementById('lives').textContent = this.lives;
         document.getElementById('level').textContent = this.level;
+    }
+    
+    preventViewportChanges() {
+        // Prevent zooming and viewport changes on mobile
+        if (this.isTouchDevice) {
+            // Prevent double-tap zoom
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', (event) => {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            
+            // Prevent pinch zoom
+            document.addEventListener('gesturestart', (event) => {
+                event.preventDefault();
+            });
+            
+            document.addEventListener('gesturechange', (event) => {
+                event.preventDefault();
+            });
+            
+            document.addEventListener('gestureend', (event) => {
+                event.preventDefault();
+            });
+            
+            // Prevent viewport changes
+            let viewport = document.querySelector('meta[name=viewport]');
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover');
+            }
+        }
     }
     
     shuffleArray(array) {

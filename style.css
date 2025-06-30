@@ -4,10 +4,19 @@
     box-sizing: border-box;
 }
 
+html {
+    height: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    position: fixed;
+    width: 100%;
+}
+
 body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -20,6 +29,10 @@ body {
     user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
 }
 
 .game-container {
@@ -36,6 +49,9 @@ body {
     min-height: 0;
     max-width: 1200px;
     max-height: 800px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
 }
 
 /* Title Section */
@@ -264,6 +280,13 @@ h1 {
     transition: none !important;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
     z-index: 9999 !important;
+    pointer-events: none !important;
+}
+
+/* Prevent layout shifts when card is moved to body */
+.characteristic-card.dragging[style*="position: fixed"] {
+    margin: 0 !important;
+    transform: none !important;
 }
 
 .characteristic-card.matched {
