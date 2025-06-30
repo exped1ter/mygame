@@ -241,11 +241,12 @@ class MicrobiologyDragDropGame {
         organismsContainer.innerHTML = '';
         characteristicsContainer.innerHTML = '';
         
-        // Show organisms from the pool (up to 4)
-        const displayedOrganisms = this.organismPool.slice(0, 4);
+        // Show organisms from the pool (up to 4) - fill up to max for new level
+        const maxOrganisms = 4;
+        const availableOrganisms = this.organismPool.slice(0, maxOrganisms);
         
         // Create organism cards
-        displayedOrganisms.forEach((data, index) => {
+        availableOrganisms.forEach((data, index) => {
             const organismCard = this.createOrganismCard(data, index);
             organismsContainer.appendChild(organismCard);
         });
@@ -255,7 +256,7 @@ class MicrobiologyDragDropGame {
         
         // Get characteristics that can be matched to the displayed organisms
         const availableCharacteristics = [];
-        displayedOrganisms.forEach(organism => {
+        availableOrganisms.forEach(organism => {
             // Get unmatched characteristics for this organism
             const organismCharacteristics = this.characteristicPool.filter(char => 
                 char.organism === organism.organism && !char.matched
@@ -472,13 +473,16 @@ class MicrobiologyDragDropGame {
             const organismCard = document.querySelector(`[data-organism="${organismName}"]`);
             if (organismCard) {
                 console.log(`Found organism card for ${organismName}, removing...`);
-                organismCard.classList.add('matched');
+                
+                // Create explosion effect
+                this.createExplosionEffect(organismCard);
+                
+                // Remove the card after explosion animation (NO replacement)
                 setTimeout(() => {
                     organismCard.remove();
                     console.log(`Organism card for ${organismName} removed from DOM`);
-                    // After removing the card, check if we need to add a new organism to fill the display
-                    this.fillOrganismDisplay();
-                }, 500);
+                    // Don't add new organisms - let them stay removed until next level
+                }, 1000); // Increased delay to allow explosion animation to complete
             } else {
                 console.log(`Organism card for ${organismName} not found in DOM`);
             }
@@ -575,68 +579,70 @@ class MicrobiologyDragDropGame {
         }, 3000);
     }
     
-    fillOrganismDisplay() {
-        const organismsContainer = document.getElementById('organismsContainer');
-        const currentOrganismCards = organismsContainer.querySelectorAll('.organism-card');
-        const maxOrganisms = 4; // Maximum organisms to display
-        
-        // If we have fewer than max organisms displayed and there are organisms in the pool
-        if (currentOrganismCards.length < maxOrganisms && this.organismPool.length > 0) {
-            const organismsToAdd = maxOrganisms - currentOrganismCards.length;
-            const availableOrganisms = this.organismPool.filter(org => 
-                !Array.from(currentOrganismCards).some(card => card.dataset.organism === org.organism)
-            );
-            
-            // Add new organisms to fill the display
-            for (let i = 0; i < Math.min(organismsToAdd, availableOrganisms.length); i++) {
-                const organismData = availableOrganisms[i];
-                const organismCard = this.createOrganismCard(organismData, currentOrganismCards.length + i);
-                organismsContainer.appendChild(organismCard);
-            }
-            
-            // After adding new organisms, refresh the characteristics to include new matches
-            this.refreshCharacteristics();
-        }
-    }
+    // fillOrganismDisplay method removed - organisms are not replaced during the level
     
-    refreshCharacteristics() {
-        const characteristicsContainer = document.getElementById('characteristicsContainer');
-        const currentCharacteristics = characteristicsContainer.querySelectorAll('.characteristic-card');
-        
-        // Get all currently displayed organisms
-        const displayedOrganisms = Array.from(document.querySelectorAll('.organism-card')).map(card => 
-            card.dataset.organism
-        );
-        
-        // Get characteristics that can be matched to the displayed organisms
-        const availableCharacteristics = [];
-        displayedOrganisms.forEach(organismName => {
-            const organismCharacteristics = this.characteristicPool.filter(char => 
-                char.organism === organismName && !char.matched
-            );
-            availableCharacteristics.push(...organismCharacteristics);
-        });
-        
-        // If we have fewer characteristics than expected for the level, add more
-        const expectedCharacteristics = this.getExpectedCharacteristicsCount();
-        if (currentCharacteristics.length < expectedCharacteristics && availableCharacteristics.length > 0) {
-            const characteristicsToAdd = expectedCharacteristics - currentCharacteristics.length;
-            const shuffledCharacteristics = this.shuffleArray(availableCharacteristics);
-            
-            for (let i = 0; i < Math.min(characteristicsToAdd, shuffledCharacteristics.length); i++) {
-                const charData = shuffledCharacteristics[i];
-                const characteristicCard = this.createCharacteristicCard(charData, currentCharacteristics.length + i);
-                characteristicsContainer.appendChild(characteristicCard);
-            }
-        }
-    }
+    // refreshCharacteristics method removed - characteristics are not refreshed during the level
     
     getExpectedCharacteristicsCount() {
-        if (this.level === 1) return 4;
-        else if (this.level === 2) return 6;
-        else if (this.level === 3) return 8;
-        else if (this.level === 4) return 10;
-        else return 12;
+        // Always limit to max 6 characteristics
+        return 6;
+    }
+    
+    createExplosionEffect(organismCard) {
+        // Add explosion class to the organism card
+        organismCard.classList.add('exploding');
+        
+        // Create explosion particles
+        const rect = organismCard.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        // Create multiple particles
+        for (let i = 0; i < 12; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'explosion-particle';
+            
+            // Random direction for each particle
+            const angle = (i / 12) * 2 * Math.PI;
+            const distance = 50 + Math.random() * 50;
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            
+            particle.style.setProperty('--x', `${x}px`);
+            particle.style.setProperty('--y', `${y}px`);
+            particle.style.left = `${centerX}px`;
+            particle.style.top = `${centerY}px`;
+            
+            document.body.appendChild(particle);
+            
+            // Remove particle after animation
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.parentNode.removeChild(particle);
+                }
+            }, 1000);
+        }
+        
+        // Add sound effect (optional - browser compatibility)
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (e) {
+            // Sound not supported, continue without it
+        }
     }
     
     updateOrganismProgress(organismName) {
