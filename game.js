@@ -357,7 +357,7 @@ class MicrobiologyDragDropGame {
             const touch = e.touches[0];
             touchStartX = touch.clientX;
             touchStartY = touch.clientY;
-            isDragging = false;
+            isDragging = true; // Start dragging immediately
             
             this.draggedElement = card;
             card.classList.add('dragging');
@@ -366,16 +366,9 @@ class MicrobiologyDragDropGame {
         card.addEventListener('touchmove', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            const deltaX = Math.abs(touch.clientX - touchStartX);
-            const deltaY = Math.abs(touch.clientY - touchStartY);
-            
-            // Start dragging after a small movement threshold
-            if (!isDragging && (deltaX > 10 || deltaY > 10)) {
-                isDragging = true;
-            }
             
             if (isDragging) {
-                // Move the card with the touch
+                // Move the card with the touch immediately
                 card.style.transform = `translate(${touch.clientX - touchStartX}px, ${touch.clientY - touchStartY}px)`;
                 card.style.zIndex = '1000';
             }
