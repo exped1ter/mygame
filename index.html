@@ -3,42 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Microbiology Matching Game</title>
+    <title>Clinical Microbiology Drag & Drop Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <h1>🧬 Microbiology Matching Game</h1>
-        <div class="game-info">
-            <div class="score">Score: <span id="score">0</span></div>
-            <div class="lives">Lives: <span id="lives">3</span></div>
-            <div class="level">Level: <span id="level">1</span></div>
+        <!-- Title Section -->
+        <div class="title-section">
+            <h1>🧬 Clinical Microbiology Drag & Drop Game</h1>
+            <div class="game-info">
+                <div class="score">Score: <span id="score">0</span></div>
+                <div class="lives">Lives: <span id="lives">3</span></div>
+                <div class="level">Level: <span id="level">1</span></div>
+            </div>
         </div>
         
+        <!-- Game Area -->
         <div class="game-area">
             <div class="organisms-section">
-                <h3>Microorganisms</h3>
-                <div id="organismsContainer" class="cards-container"></div>
+                <h3>Organisms</h3>
+                <div id="organismsContainer" class="organisms-container"></div>
             </div>
             
             <div class="characteristics-section">
-                <h3>Characteristics</h3>
-                <div id="characteristicsContainer" class="cards-container"></div>
+                <h3>Drag Characteristics Here</h3>
+                <div class="legend">
+                    <span class="legend-item">🔬 Microscopic</span>
+                    <span class="legend-item">🧫 Cultural</span>
+                </div>
+                <div id="characteristicsContainer" class="characteristics-container"></div>
             </div>
         </div>
         
-        <div class="controls">
-            <button id="startBtn">Start Game</button>
-            <button id="resetBtn">Reset</button>
-            <button id="hintBtn">Hint</button>
+        <!-- Footer Section -->
+        <div class="footer-section">
+            <div class="controls">
+                <button id="startBtn">Start Game</button>
+                <button id="resetBtn">Reset</button>
+                <button id="hintBtn">Hint</button>
+            </div>
+            
+            <div class="instructions">
+                <p>Drag the characteristic cards from the right and drop them onto the matching organisms on the left!</p>
+            </div>
+            
+            <div id="feedback" class="feedback"></div>
         </div>
-        
-        <div class="instructions">
-            <p>Match each microorganism with its correct characteristic! Click on a microorganism first, then click on its matching characteristic.</p>
-            <p>Get it right to score points, but be careful - wrong matches cost lives!</p>
-        </div>
-        
-        <div id="feedback" class="feedback"></div>
     </div>
     <script src="game.js"></script>
 </body>

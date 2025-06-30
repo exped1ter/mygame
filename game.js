@@ -1,79 +1,117 @@
-class MicrobiologyGame {
+class MicrobiologyDragDropGame {
     constructor() {
         this.score = 0;
         this.lives = 3;
         this.level = 1;
         this.gameRunning = false;
-        this.selectedOrganism = null;
-        this.selectedCharacteristic = null;
         this.matchedPairs = [];
+        this.draggedElement = null;
         
-        // Microbiology data - organisms and their characteristics
+        // Custom microbiology data with organisms and their characteristics
         this.microbiologyData = [
             {
-                organism: "Bacteria",
+                organism: "Salmonella sp.",
                 icon: "🦠",
-                description: "Single-celled prokaryotes",
-                characteristics: [
-                    "No nucleus",
-                    "Cell wall made of peptidoglycan",
-                    "Reproduce by binary fission",
-                    "Can be beneficial or harmful"
+                description: "Foodborne pathogen",
+                microscopicMorphology: ["Gram-negative bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, O₂",
+                    "MAC: NLF",
+                    "XLD: red with black center"
                 ]
             },
             {
-                organism: "Virus",
+                organism: "Shigella sp.",
                 icon: "🦠",
-                description: "Non-living infectious agent",
-                characteristics: [
-                    "Requires host cell to reproduce",
-                    "Contains DNA or RNA",
-                    "Cannot survive without host",
-                    "Causes many diseases"
+                description: "Dysentery causing bacteria",
+                microscopicMorphology: ["Gram-negative bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, O₂",
+                    "MAC: NLF",
+                    "XLD: colourless"
                 ]
             },
             {
-                organism: "Fungi",
-                icon: "🍄",
-                description: "Eukaryotic organisms",
-                characteristics: [
-                    "Have cell walls made of chitin",
-                    "Decompose organic matter",
-                    "Can be unicellular or multicellular",
-                    "Reproduce by spores"
-                ]
-            },
-            {
-                organism: "Protozoa",
+                organism: "E. coli O157:H7",
                 icon: "🦠",
-                description: "Single-celled eukaryotes",
-                characteristics: [
-                    "Have a nucleus",
-                    "Move using cilia, flagella, or pseudopods",
-                    "Live in water or moist environments",
-                    "Some cause diseases like malaria"
+                description: "Enterohemorrhagic E. coli",
+                microscopicMorphology: ["Gram-negative bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, O₂",
+                    "MAC: LF/NLF",
+                    "SMAC: NSF (colourless)"
                 ]
             },
             {
-                organism: "Algae",
-                icon: "🌿",
-                description: "Photosynthetic organisms",
-                characteristics: [
-                    "Produce oxygen through photosynthesis",
-                    "Found in aquatic environments",
-                    "Can be unicellular or multicellular",
-                    "Base of many food chains"
-                ]
-            },
-            {
-                organism: "Archaea",
+                organism: "Yersinia enterocolitica",
                 icon: "🦠",
-                description: "Ancient prokaryotes",
-                characteristics: [
-                    "Live in extreme environments",
-                    "Cell wall different from bacteria",
-                    "No nucleus",
-                    "Some produce methane"
+                description: "Foodborne pathogen",
+                microscopicMorphology: ["Gram-negative bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 25–30°C, O₂",
+                    "MAC: NLF",
+                    "CIN: red \"bull's eye\" colonies"
+                ]
+            },
+            {
+                organism: "Aeromonas hydrophila",
+                icon: "🦠",
+                description: "Aquatic pathogen",
+                microscopicMorphology: ["Gram-negative bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, O₂",
+                    "BA: large, round, β-hemolytic",
+                    "MAC: LF or NLF"
+                ]
+            },
+            {
+                organism: "Plesiomonas shigelloides",
+                icon: "🦠",
+                description: "Aquatic bacteria",
+                microscopicMorphology: ["Pleomorphic Gram-negative bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, O₂",
+                    "BA: grey, shiny, nonhemolytic",
+                    "MAC: LF or NLF"
+                ]
+            },
+            {
+                organism: "Vibrio sp.",
+                icon: "🦠",
+                description: "Marine bacteria",
+                microscopicMorphology: ["Gram-negative bacilli (may be slightly curved)"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, O₂",
+                    "BA: small-large, iridescent with greenish hue"
+                ]
+            },
+            {
+                organism: "Campylobacter sp.",
+                icon: "🦠",
+                description: "Foodborne pathogen",
+                microscopicMorphology: ["Small Gram-negative bacilli (seagull or curved shape)"],
+                culturalCharacteristics: [
+                    "Atmosphere: 42°C, microaerophilic",
+                    "Campylobacter agar: greyish-pink mucoid colonies"
+                ]
+            },
+            {
+                organism: "Helicobacter pylori",
+                icon: "🦠",
+                description: "Gastric pathogen",
+                microscopicMorphology: ["Gram-negative seagull or curved bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, microaerophilic",
+                    "Helicobacter agar: small, translucent colonies"
+                ]
+            },
+            {
+                organism: "Clostridium difficile",
+                icon: "🦠",
+                description: "Anaerobic pathogen",
+                microscopicMorphology: ["Gram-positive bacilli"],
+                culturalCharacteristics: [
+                    "Atmosphere: 37°C, anaerobic"
                 ]
             }
         ];
@@ -107,11 +145,9 @@ class MicrobiologyGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
-        this.selectedOrganism = null;
-        this.selectedCharacteristic = null;
         this.updateUI();
         this.renderCards();
-        this.showFeedback("Game started! Match the microorganisms with their characteristics.", "hint");
+        this.showFeedback("Game started! Drag characteristics onto the matching organisms.", "hint");
     }
     
     resetGame() {
@@ -120,8 +156,6 @@ class MicrobiologyGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
-        this.selectedOrganism = null;
-        this.selectedCharacteristic = null;
         this.updateUI();
         this.renderCards();
         this.showFeedback("Game reset. Click 'Start Game' to begin!", "hint");
@@ -134,164 +168,219 @@ class MicrobiologyGame {
         organismsContainer.innerHTML = '';
         characteristicsContainer.innerHTML = '';
         
-        // Get current level data (show more organisms as level increases)
-        const currentLevelData = this.microbiologyData.slice(0, Math.min(this.level + 2, this.microbiologyData.length));
+        // Level progression: Specific number of characteristics per level
+        let characteristicsPerLevel;
+        if (this.level === 1) {
+            characteristicsPerLevel = 4; // Level 1: 4 characteristics
+        } else if (this.level === 2) {
+            characteristicsPerLevel = 6; // Level 2: 6 characteristics
+        } else if (this.level === 3) {
+            characteristicsPerLevel = 8; // Level 3: 8 characteristics
+        } else if (this.level === 4) {
+            characteristicsPerLevel = 10; // Level 4: 10 characteristics
+        } else if (this.level === 5) {
+            characteristicsPerLevel = 12; // Level 5: 12 characteristics (max level)
+        } else {
+            characteristicsPerLevel = 12; // Beyond level 5: stay at max
+        }
         
-        // Create organism cards
-        currentLevelData.forEach((data, index) => {
-            if (!this.matchedPairs.includes(data.organism)) {
-                const organismCard = this.createCard(
-                    data.organism,
-                    data.icon,
-                    data.description,
-                    'organism',
-                    index
-                );
-                organismsContainer.appendChild(organismCard);
-            }
+        // Show only 4 organisms on the left (2x2 grid)
+        const displayedOrganisms = this.microbiologyData.slice(0, 4);
+        
+        // Create organism cards (show only 4 organisms in 2x2 grid)
+        displayedOrganisms.forEach((data, index) => {
+            const organismCard = this.createOrganismCard(data, index);
+            organismsContainer.appendChild(organismCard);
         });
         
-        // Create characteristic cards (shuffled)
-        const allCharacteristics = [];
-        currentLevelData.forEach(data => {
-            data.characteristics.forEach(char => {
-                allCharacteristics.push({
+        // Get all characteristics that can be matched to the displayed organisms
+        const availableCharacteristics = [];
+        displayedOrganisms.forEach(data => {
+            // Add microscopic morphology characteristics
+            data.microscopicMorphology.forEach(char => {
+                availableCharacteristics.push({
                     characteristic: char,
-                    organism: data.organism
+                    organism: data.organism,
+                    type: 'microscopic'
+                });
+            });
+            // Add cultural characteristics
+            data.culturalCharacteristics.forEach(char => {
+                availableCharacteristics.push({
+                    characteristic: char,
+                    organism: data.organism,
+                    type: 'cultural'
                 });
             });
         });
         
-        // Shuffle characteristics
-        const shuffledCharacteristics = this.shuffleArray(allCharacteristics);
+        // Shuffle and select only the required number for this level
+        const shuffledCharacteristics = this.shuffleArray(availableCharacteristics);
+        const selectedCharacteristics = shuffledCharacteristics.slice(0, Math.min(characteristicsPerLevel, shuffledCharacteristics.length));
         
-        shuffledCharacteristics.forEach((charData, index) => {
-            if (!this.matchedPairs.includes(charData.characteristic)) {
-                const characteristicCard = this.createCard(
-                    charData.characteristic,
-                    "🔬",
-                    "",
-                    'characteristic',
-                    index,
-                    charData.organism
-                );
-                characteristicsContainer.appendChild(characteristicCard);
-            }
+        selectedCharacteristics.forEach((charData, index) => {
+            const characteristicCard = this.createCharacteristicCard(charData, index);
+            characteristicsContainer.appendChild(characteristicCard);
         });
     }
     
-    createCard(text, icon, description, type, index, correctOrganism = null) {
+    createOrganismCard(data, index) {
         const card = document.createElement('div');
-        card.className = 'card';
-        card.dataset.type = type;
+        card.className = 'organism-card';
+        card.dataset.organism = data.organism;
         card.dataset.index = index;
-        if (correctOrganism) {
-            card.dataset.correctOrganism = correctOrganism;
-        }
         
         card.innerHTML = `
-            <div class="card-icon">${icon}</div>
-            <div class="card-text">${text}</div>
-            ${description ? `<div class="card-description">${description}</div>` : ''}
+            <div class="card-icon">${data.icon}</div>
+            <div class="card-text">${data.organism}</div>
+            <div class="card-description">${data.description}</div>
         `;
         
-        card.addEventListener('click', () => {
-            this.handleCardClick(card, type, text, correctOrganism);
+        // Add drag and drop event listeners
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            card.classList.add('drag-over');
+        });
+        
+        card.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+        });
+        
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+            this.handleDrop(card, this.draggedElement);
         });
         
         return card;
     }
     
-    handleCardClick(card, type, text, correctOrganism) {
-        if (!this.gameRunning || card.classList.contains('matched')) {
+    createCharacteristicCard(charData, index) {
+        const card = document.createElement('div');
+        card.className = `characteristic-card ${charData.type}-card`;
+        card.dataset.characteristic = charData.characteristic;
+        card.dataset.type = charData.type;
+        card.dataset.index = index;
+        card.draggable = true;
+        
+        card.innerHTML = `
+            <div class="card-text">${charData.characteristic}</div>
+            <div class="card-type">${charData.type === 'microscopic' ? '🔬' : '🧫'}</div>
+        `;
+        
+        // Add drag event listeners
+        card.addEventListener('dragstart', (e) => {
+            this.draggedElement = card;
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', card.outerHTML);
+        });
+        
+        card.addEventListener('dragend', (e) => {
+            card.classList.remove('dragging');
+            this.draggedElement = null;
+        });
+        
+        return card;
+    }
+    
+    handleDrop(organismCard, characteristicCard) {
+        if (!this.gameRunning || !characteristicCard || characteristicCard.classList.contains('matched')) {
             return;
         }
         
-        // Clear previous selections
-        document.querySelectorAll('.card.selected').forEach(c => {
-            c.classList.remove('selected');
-        });
+        const organismName = organismCard.dataset.organism;
+        const characteristicText = characteristicCard.dataset.characteristic;
+        const characteristicType = characteristicCard.dataset.type;
         
-        if (type === 'organism') {
-            this.selectedOrganism = text;
-            this.selectedCharacteristic = null;
-            card.classList.add('selected');
-            this.showFeedback(`Selected: ${text}`, "hint");
-        } else if (type === 'characteristic') {
-            this.selectedCharacteristic = text;
-            card.classList.add('selected');
-            
-            if (this.selectedOrganism) {
-                this.checkMatch();
-            } else {
-                this.showFeedback("Please select an organism first!", "incorrect");
-                card.classList.remove('selected');
+        // Check if this organism has this characteristic
+        const organismData = this.microbiologyData.find(data => data.organism === organismName);
+        let isCorrectMatch = false;
+        
+        if (organismData) {
+            if (characteristicType === 'microscopic') {
+                isCorrectMatch = organismData.microscopicMorphology.includes(characteristicText);
+            } else if (characteristicType === 'cultural') {
+                isCorrectMatch = organismData.culturalCharacteristics.includes(characteristicText);
             }
         }
-    }
-    
-    checkMatch() {
-        const organismCard = document.querySelector('.card.selected[data-type="organism"]');
-        const characteristicCard = document.querySelector('.card.selected[data-type="characteristic"]');
         
-        if (!organismCard || !characteristicCard) return;
-        
-        const selectedOrganism = this.selectedOrganism;
-        const selectedCharacteristic = this.selectedCharacteristic;
-        const correctOrganism = characteristicCard.dataset.correctOrganism;
-        
-        if (selectedOrganism === correctOrganism) {
+        if (isCorrectMatch) {
             // Correct match!
             this.score += 10;
-            this.matchedPairs.push(selectedOrganism);
-            this.matchedPairs.push(selectedCharacteristic);
+            this.matchedPairs.push(organismName);
+            this.matchedPairs.push(characteristicText);
             
-            organismCard.classList.remove('selected');
+            // Visual feedback for correct match
             organismCard.classList.add('matched');
-            characteristicCard.classList.remove('selected');
             characteristicCard.classList.add('matched');
             
-            this.showFeedback(`Correct! ${selectedOrganism} matches with ${selectedCharacteristic}`, "correct");
+            // Remove the characteristic card after animation
+            setTimeout(() => {
+                characteristicCard.remove();
+            }, 300);
             
-            // Check if level is complete
+            // Return organism card to normal after 1 second
+            setTimeout(() => {
+                organismCard.classList.remove('matched');
+            }, 1000);
+            
+            this.showFeedback(`Correct! ${organismName} matches with ${characteristicText}`, "correct");
+            
+            // Check if level is complete (all characteristic cards are gone)
             this.checkLevelComplete();
         } else {
             // Wrong match!
             this.lives--;
-            organismCard.classList.add('wrong');
-            characteristicCard.classList.add('wrong');
+            organismCard.classList.add('wrong-drop');
+            characteristicCard.classList.add('wrong-drop');
             
             setTimeout(() => {
-                organismCard.classList.remove('selected', 'wrong');
-                characteristicCard.classList.remove('selected', 'wrong');
+                organismCard.classList.remove('wrong-drop');
+                characteristicCard.classList.remove('wrong-drop');
             }, 1000);
             
-            this.showFeedback(`Incorrect! ${selectedCharacteristic} does not belong to ${selectedOrganism}`, "incorrect");
+            this.showFeedback(`Incorrect! ${characteristicText} does not belong to ${organismName}`, "incorrect");
             
             if (this.lives <= 0) {
                 this.gameOver();
             }
         }
         
-        this.selectedOrganism = null;
-        this.selectedCharacteristic = null;
         this.updateUI();
     }
     
     checkLevelComplete() {
-        const currentLevelData = this.microbiologyData.slice(0, Math.min(this.level + 2, this.microbiologyData.length));
-        const totalPairs = currentLevelData.length;
-        const matchedPairs = this.matchedPairs.filter(item => 
-            currentLevelData.some(data => data.organism === item)
-        ).length;
+        // Check if all characteristic cards are gone (right column is empty)
+        const characteristicsContainer = document.getElementById('characteristicsContainer');
+        const remainingCards = characteristicsContainer.querySelectorAll('.characteristic-card');
         
-        if (matchedPairs >= totalPairs) {
-            this.level++;
-            this.showFeedback(`Level ${this.level - 1} complete! Starting level ${this.level}`, "correct");
-            setTimeout(() => {
-                this.renderCards();
-            }, 2000);
+        if (remainingCards.length === 0) {
+            // Level complete! All characteristic cards have been matched
+            
+            if (this.level >= 5) {
+                // Game completed! All 5 levels finished
+                this.gameCompleted();
+            } else {
+                // Move to next level
+                this.level++;
+                this.showFeedback(`🎉 Level ${this.level - 1} Complete! 🎉 Starting Level ${this.level}`, "correct");
+                setTimeout(() => {
+                    this.renderCards();
+                }, 2000);
+            }
         }
+    }
+    
+    gameCompleted() {
+        this.gameRunning = false;
+        this.showFeedback(`🏆 CONGRATULATIONS! 🏆 You've completed all 5 levels! Final Score: ${this.score}`, "correct");
+        
+        // Add a celebration effect
+        setTimeout(() => {
+            this.showFeedback("🎊 You're a Microbiology Master! 🎊", "hint");
+        }, 3000);
     }
     
     gameOver() {
@@ -305,14 +394,19 @@ class MicrobiologyGame {
             return;
         }
         
-        const currentLevelData = this.microbiologyData.slice(0, Math.min(this.level + 2, this.microbiologyData.length));
-        const unmatchedOrganisms = currentLevelData.filter(data => 
+        // Get all organisms for hints
+        const allOrganisms = this.microbiologyData;
+        const unmatchedOrganisms = allOrganisms.filter(data => 
             !this.matchedPairs.includes(data.organism)
         );
         
         if (unmatchedOrganisms.length > 0) {
             const randomOrganism = unmatchedOrganisms[Math.floor(Math.random() * unmatchedOrganisms.length)];
-            const hint = randomOrganism.characteristics[Math.floor(Math.random() * randomOrganism.characteristics.length)];
+            const allCharacteristics = [
+                ...randomOrganism.microscopicMorphology,
+                ...randomOrganism.culturalCharacteristics
+            ];
+            const hint = allCharacteristics[Math.floor(Math.random() * allCharacteristics.length)];
             this.showFeedback(`Hint: ${randomOrganism.organism} - ${hint}`, "hint");
         }
     }
@@ -346,5 +440,5 @@ class MicrobiologyGame {
 
 // Initialize the game when the page loads
 window.addEventListener('load', () => {
-    new MicrobiologyGame();
+    new MicrobiologyDragDropGame();
 }); 
