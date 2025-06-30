@@ -8,6 +8,9 @@ class MicrobiologyDragDropGame {
         this.draggedElement = null;
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
+        // Prevent viewport changes on mobile
+        this.preventViewportChanges();
+        
         // Pool system for organisms and their characteristics
         this.organismPool = [];
         this.characteristicPool = [];
@@ -189,6 +192,9 @@ class MicrobiologyDragDropGame {
         const resetBtn = document.getElementById('resetBtn');
         const hintBtn = document.getElementById('hintBtn');
         
+        // Clean up any cards that might be stuck in the body
+        this.cleanupBodyCards();
+        
         organismCards.forEach(card => {
             if (enabled) {
                 card.classList.remove('disabled');
@@ -223,6 +229,7 @@ class MicrobiologyDragDropGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
+        this.cleanupBodyCards(); // Clean up any stuck cards
         this.initializePools();
         this.updateUI();
         this.renderCards();
@@ -236,6 +243,7 @@ class MicrobiologyDragDropGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
+        this.cleanupBodyCards(); // Clean up any stuck cards
         this.initializePools();
         this.updateUI();
         this.renderCards();
@@ -525,7 +533,12 @@ class MicrobiologyDragDropGame {
             
             // Remove the characteristic card after animation
             setTimeout(() => {
-                characteristicCard.remove();
+                // Make sure to remove from body if it's there
+                if (characteristicCard.parentNode === document.body) {
+                    document.body.removeChild(characteristicCard);
+                } else {
+                    characteristicCard.remove();
+                }
             }, 300);
             
             // Return organism card to normal after 1 second
@@ -635,6 +648,7 @@ class MicrobiologyDragDropGame {
                 
                 // Start new level after delay
                 setTimeout(() => {
+                    this.cleanupBodyCards(); // Clean up any stuck cards
                     this.renderCards();
                     this.setGameState(true); // Re-enable interactions
                 }, 3000);
@@ -781,6 +795,50 @@ class MicrobiologyDragDropGame {
         document.getElementById('score').textContent = this.score;
         document.getElementById('lives').textContent = this.lives;
         document.getElementById('level').textContent = this.level;
+    }
+    
+    cleanupBodyCards() {
+        // Remove any characteristic cards that might be stuck in the body
+        const bodyCards = document.body.querySelectorAll('.characteristic-card');
+        bodyCards.forEach(card => {
+            if (card.parentNode === document.body) {
+                document.body.removeChild(card);
+            }
+        });
+    }
+    
+    preventViewportChanges() {
+        // Prevent zooming and viewport changes on mobile
+        if (this.isTouchDevice) {
+            // Prevent double-tap zoom
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', (event) => {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            
+            // Prevent pinch zoom
+            document.addEventListener('gesturestart', (event) => {
+                event.preventDefault();
+            });
+            
+            document.addEventListener('gesturechange', (event) => {
+                event.preventDefault();
+            });
+            
+            document.addEventListener('gestureend', (event) => {
+                event.preventDefault();
+            });
+            
+            // Prevent viewport changes
+            let viewport = document.querySelector('meta[name=viewport]');
+            if (viewport) {
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover');
+            }
+        }
     }
     
     shuffleArray(array) {
