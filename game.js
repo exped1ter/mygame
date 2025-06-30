@@ -838,6 +838,26 @@ class MicrobiologyDragDropGame {
             if (viewport) {
                 viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover');
             }
+            
+            // iOS Safari specific fixes
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                // Force repaint to fix rendering issues
+                setTimeout(() => {
+                    document.body.style.display = 'none';
+                    document.body.offsetHeight; // Force reflow
+                    document.body.style.display = 'flex';
+                }, 100);
+                
+                // Ensure proper viewport height
+                const setViewportHeight = () => {
+                    const vh = window.innerHeight * 0.01;
+                    document.documentElement.style.setProperty('--vh', `${vh}px`);
+                };
+                
+                setViewportHeight();
+                window.addEventListener('resize', setViewportHeight);
+                window.addEventListener('orientationchange', setViewportHeight);
+            }
         }
     }
     
