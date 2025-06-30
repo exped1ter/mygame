@@ -1,199 +1,350 @@
-class Game {
+class MicrobiologyGame {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
         this.score = 0;
         this.lives = 3;
+        this.level = 1;
         this.gameRunning = false;
-        this.gamePaused = false;
+        this.selectedOrganism = null;
+        this.selectedCharacteristic = null;
+        this.matchedPairs = [];
         
-        // Player properties
-        this.player = {
-            x: this.canvas.width / 2,
-            y: this.canvas.height / 2,
-            size: 20,
-            speed: 5,
-            color: '#4CAF50'
-        };
+        // Microbiology data - organisms and their characteristics
+        this.microbiologyData = [
+            {
+                organism: "Bacteria",
+                icon: "🦠",
+                description: "Single-celled prokaryotes",
+                characteristics: [
+                    "No nucleus",
+                    "Cell wall made of peptidoglycan",
+                    "Reproduce by binary fission",
+                    "Can be beneficial or harmful"
+                ]
+            },
+            {
+                organism: "Virus",
+                icon: "🦠",
+                description: "Non-living infectious agent",
+                characteristics: [
+                    "Requires host cell to reproduce",
+                    "Contains DNA or RNA",
+                    "Cannot survive without host",
+                    "Causes many diseases"
+                ]
+            },
+            {
+                organism: "Fungi",
+                icon: "🍄",
+                description: "Eukaryotic organisms",
+                characteristics: [
+                    "Have cell walls made of chitin",
+                    "Decompose organic matter",
+                    "Can be unicellular or multicellular",
+                    "Reproduce by spores"
+                ]
+            },
+            {
+                organism: "Protozoa",
+                icon: "🦠",
+                description: "Single-celled eukaryotes",
+                characteristics: [
+                    "Have a nucleus",
+                    "Move using cilia, flagella, or pseudopods",
+                    "Live in water or moist environments",
+                    "Some cause diseases like malaria"
+                ]
+            },
+            {
+                organism: "Algae",
+                icon: "🌿",
+                description: "Photosynthetic organisms",
+                characteristics: [
+                    "Produce oxygen through photosynthesis",
+                    "Found in aquatic environments",
+                    "Can be unicellular or multicellular",
+                    "Base of many food chains"
+                ]
+            },
+            {
+                organism: "Archaea",
+                icon: "🦠",
+                description: "Ancient prokaryotes",
+                characteristics: [
+                    "Live in extreme environments",
+                    "Cell wall different from bacteria",
+                    "No nucleus",
+                    "Some produce methane"
+                ]
+            }
+        ];
         
-        // Collectibles
-        this.collectibles = [];
-        this.maxCollectibles = 5;
-        
-        // Input handling
-        this.keys = {};
         this.setupEventListeners();
-        
-        // Start the game loop
-        this.gameLoop();
+        this.initializeGame();
     }
     
     setupEventListeners() {
-        // Keyboard events
-        document.addEventListener('keydown', (e) => {
-            this.keys[e.key] = true;
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            this.keys[e.key] = false;
-        });
-        
-        // Button events
         document.getElementById('startBtn').addEventListener('click', () => {
             this.startGame();
         });
         
-        document.getElementById('pauseBtn').addEventListener('click', () => {
-            this.togglePause();
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            this.resetGame();
         });
+        
+        document.getElementById('hintBtn').addEventListener('click', () => {
+            this.showHint();
+        });
+    }
+    
+    initializeGame() {
+        this.updateUI();
+        this.renderCards();
     }
     
     startGame() {
         this.gameRunning = true;
-        this.gamePaused = false;
         this.score = 0;
         this.lives = 3;
-        this.collectibles = [];
+        this.level = 1;
+        this.matchedPairs = [];
+        this.selectedOrganism = null;
+        this.selectedCharacteristic = null;
         this.updateUI();
-        this.spawnCollectibles();
+        this.renderCards();
+        this.showFeedback("Game started! Match the microorganisms with their characteristics.", "hint");
     }
     
-    togglePause() {
-        if (this.gameRunning) {
-            this.gamePaused = !this.gamePaused;
-        }
+    resetGame() {
+        this.gameRunning = false;
+        this.score = 0;
+        this.lives = 3;
+        this.level = 1;
+        this.matchedPairs = [];
+        this.selectedOrganism = null;
+        this.selectedCharacteristic = null;
+        this.updateUI();
+        this.renderCards();
+        this.showFeedback("Game reset. Click 'Start Game' to begin!", "hint");
     }
     
-    spawnCollectibles() {
-        if (this.collectibles.length < this.maxCollectibles) {
-            const collectible = {
-                x: Math.random() * (this.canvas.width - 20),
-                y: Math.random() * (this.canvas.height - 20),
-                size: 15,
-                color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-                speed: 1 + Math.random() * 2
-            };
-            this.collectibles.push(collectible);
-        }
-    }
-    
-    updatePlayer() {
-        // Handle player movement
-        if (this.keys['ArrowUp'] || this.keys['w']) {
-            this.player.y = Math.max(this.player.size, this.player.y - this.player.speed);
-        }
-        if (this.keys['ArrowDown'] || this.keys['s']) {
-            this.player.y = Math.min(this.canvas.height - this.player.size, this.player.y + this.player.speed);
-        }
-        if (this.keys['ArrowLeft'] || this.keys['a']) {
-            this.player.x = Math.max(this.player.size, this.player.x - this.player.speed);
-        }
-        if (this.keys['ArrowRight'] || this.keys['d']) {
-            this.player.x = Math.min(this.canvas.width - this.player.size, this.player.x + this.player.speed);
-        }
-    }
-    
-    updateCollectibles() {
-        // Move collectibles
-        this.collectibles.forEach(collectible => {
-            collectible.y += collectible.speed;
-            
-            // Remove collectibles that fall off screen
-            if (collectible.y > this.canvas.height) {
-                const index = this.collectibles.indexOf(collectible);
-                if (index > -1) {
-                    this.collectibles.splice(index, 1);
-                    this.lives--;
-                    this.updateUI();
-                }
+    renderCards() {
+        const organismsContainer = document.getElementById('organismsContainer');
+        const characteristicsContainer = document.getElementById('characteristicsContainer');
+        
+        organismsContainer.innerHTML = '';
+        characteristicsContainer.innerHTML = '';
+        
+        // Get current level data (show more organisms as level increases)
+        const currentLevelData = this.microbiologyData.slice(0, Math.min(this.level + 2, this.microbiologyData.length));
+        
+        // Create organism cards
+        currentLevelData.forEach((data, index) => {
+            if (!this.matchedPairs.includes(data.organism)) {
+                const organismCard = this.createCard(
+                    data.organism,
+                    data.icon,
+                    data.description,
+                    'organism',
+                    index
+                );
+                organismsContainer.appendChild(organismCard);
             }
         });
         
-        // Check collisions
-        this.collectibles.forEach((collectible, index) => {
-            const distance = Math.sqrt(
-                Math.pow(this.player.x - collectible.x, 2) + 
-                Math.pow(this.player.y - collectible.y, 2)
-            );
-            
-            if (distance < this.player.size + collectible.size) {
-                this.collectibles.splice(index, 1);
-                this.score += 10;
-                this.updateUI();
-            }
+        // Create characteristic cards (shuffled)
+        const allCharacteristics = [];
+        currentLevelData.forEach(data => {
+            data.characteristics.forEach(char => {
+                allCharacteristics.push({
+                    characteristic: char,
+                    organism: data.organism
+                });
+            });
         });
         
-        // Spawn new collectibles
-        if (Math.random() < 0.02) {
-            this.spawnCollectibles();
+        // Shuffle characteristics
+        const shuffledCharacteristics = this.shuffleArray(allCharacteristics);
+        
+        shuffledCharacteristics.forEach((charData, index) => {
+            if (!this.matchedPairs.includes(charData.characteristic)) {
+                const characteristicCard = this.createCard(
+                    charData.characteristic,
+                    "🔬",
+                    "",
+                    'characteristic',
+                    index,
+                    charData.organism
+                );
+                characteristicsContainer.appendChild(characteristicCard);
+            }
+        });
+    }
+    
+    createCard(text, icon, description, type, index, correctOrganism = null) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.type = type;
+        card.dataset.index = index;
+        if (correctOrganism) {
+            card.dataset.correctOrganism = correctOrganism;
         }
+        
+        card.innerHTML = `
+            <div class="card-icon">${icon}</div>
+            <div class="card-text">${text}</div>
+            ${description ? `<div class="card-description">${description}</div>` : ''}
+        `;
+        
+        card.addEventListener('click', () => {
+            this.handleCardClick(card, type, text, correctOrganism);
+        });
+        
+        return card;
+    }
+    
+    handleCardClick(card, type, text, correctOrganism) {
+        if (!this.gameRunning || card.classList.contains('matched')) {
+            return;
+        }
+        
+        // Clear previous selections
+        document.querySelectorAll('.card.selected').forEach(c => {
+            c.classList.remove('selected');
+        });
+        
+        if (type === 'organism') {
+            this.selectedOrganism = text;
+            this.selectedCharacteristic = null;
+            card.classList.add('selected');
+            this.showFeedback(`Selected: ${text}`, "hint");
+        } else if (type === 'characteristic') {
+            this.selectedCharacteristic = text;
+            card.classList.add('selected');
+            
+            if (this.selectedOrganism) {
+                this.checkMatch();
+            } else {
+                this.showFeedback("Please select an organism first!", "incorrect");
+                card.classList.remove('selected');
+            }
+        }
+    }
+    
+    checkMatch() {
+        const organismCard = document.querySelector('.card.selected[data-type="organism"]');
+        const characteristicCard = document.querySelector('.card.selected[data-type="characteristic"]');
+        
+        if (!organismCard || !characteristicCard) return;
+        
+        const selectedOrganism = this.selectedOrganism;
+        const selectedCharacteristic = this.selectedCharacteristic;
+        const correctOrganism = characteristicCard.dataset.correctOrganism;
+        
+        if (selectedOrganism === correctOrganism) {
+            // Correct match!
+            this.score += 10;
+            this.matchedPairs.push(selectedOrganism);
+            this.matchedPairs.push(selectedCharacteristic);
+            
+            organismCard.classList.remove('selected');
+            organismCard.classList.add('matched');
+            characteristicCard.classList.remove('selected');
+            characteristicCard.classList.add('matched');
+            
+            this.showFeedback(`Correct! ${selectedOrganism} matches with ${selectedCharacteristic}`, "correct");
+            
+            // Check if level is complete
+            this.checkLevelComplete();
+        } else {
+            // Wrong match!
+            this.lives--;
+            organismCard.classList.add('wrong');
+            characteristicCard.classList.add('wrong');
+            
+            setTimeout(() => {
+                organismCard.classList.remove('selected', 'wrong');
+                characteristicCard.classList.remove('selected', 'wrong');
+            }, 1000);
+            
+            this.showFeedback(`Incorrect! ${selectedCharacteristic} does not belong to ${selectedOrganism}`, "incorrect");
+            
+            if (this.lives <= 0) {
+                this.gameOver();
+            }
+        }
+        
+        this.selectedOrganism = null;
+        this.selectedCharacteristic = null;
+        this.updateUI();
+    }
+    
+    checkLevelComplete() {
+        const currentLevelData = this.microbiologyData.slice(0, Math.min(this.level + 2, this.microbiologyData.length));
+        const totalPairs = currentLevelData.length;
+        const matchedPairs = this.matchedPairs.filter(item => 
+            currentLevelData.some(data => data.organism === item)
+        ).length;
+        
+        if (matchedPairs >= totalPairs) {
+            this.level++;
+            this.showFeedback(`Level ${this.level - 1} complete! Starting level ${this.level}`, "correct");
+            setTimeout(() => {
+                this.renderCards();
+            }, 2000);
+        }
+    }
+    
+    gameOver() {
+        this.gameRunning = false;
+        this.showFeedback(`Game Over! Final Score: ${this.score}`, "incorrect");
+    }
+    
+    showHint() {
+        if (!this.gameRunning) {
+            this.showFeedback("Start the game first!", "hint");
+            return;
+        }
+        
+        const currentLevelData = this.microbiologyData.slice(0, Math.min(this.level + 2, this.microbiologyData.length));
+        const unmatchedOrganisms = currentLevelData.filter(data => 
+            !this.matchedPairs.includes(data.organism)
+        );
+        
+        if (unmatchedOrganisms.length > 0) {
+            const randomOrganism = unmatchedOrganisms[Math.floor(Math.random() * unmatchedOrganisms.length)];
+            const hint = randomOrganism.characteristics[Math.floor(Math.random() * randomOrganism.characteristics.length)];
+            this.showFeedback(`Hint: ${randomOrganism.organism} - ${hint}`, "hint");
+        }
+    }
+    
+    showFeedback(message, type) {
+        const feedback = document.getElementById('feedback');
+        feedback.textContent = message;
+        feedback.className = `feedback ${type}`;
+        
+        setTimeout(() => {
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+        }, 3000);
     }
     
     updateUI() {
         document.getElementById('score').textContent = this.score;
         document.getElementById('lives').textContent = this.lives;
-        
-        // Check game over
-        if (this.lives <= 0) {
-            this.gameRunning = false;
-            alert(`Game Over! Final Score: ${this.score}`);
-        }
+        document.getElementById('level').textContent = this.level;
     }
     
-    draw() {
-        // Clear canvas
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw player
-        this.ctx.fillStyle = this.player.color;
-        this.ctx.beginPath();
-        this.ctx.arc(this.player.x, this.player.y, this.player.size, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        // Add player glow effect
-        this.ctx.shadowColor = this.player.color;
-        this.ctx.shadowBlur = 10;
-        this.ctx.fill();
-        this.ctx.shadowBlur = 0;
-        
-        // Draw collectibles
-        this.collectibles.forEach(collectible => {
-            this.ctx.fillStyle = collectible.color;
-            this.ctx.beginPath();
-            this.ctx.arc(collectible.x, collectible.y, collectible.size, 0, Math.PI * 2);
-            this.ctx.fill();
-            
-            // Add collectible glow effect
-            this.ctx.shadowColor = collectible.color;
-            this.ctx.shadowBlur = 8;
-            this.ctx.fill();
-            this.ctx.shadowBlur = 0;
-        });
-        
-        // Draw pause overlay
-        if (this.gamePaused) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = '48px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+    shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-    }
-    
-    gameLoop() {
-        if (this.gameRunning && !this.gamePaused) {
-            this.updatePlayer();
-            this.updateCollectibles();
-        }
-        
-        this.draw();
-        requestAnimationFrame(() => this.gameLoop());
+        return shuffled;
     }
 }
 
 // Initialize the game when the page loads
 window.addEventListener('load', () => {
-    new Game();
+    new MicrobiologyGame();
 }); 

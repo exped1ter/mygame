@@ -6,12 +6,13 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     color: white;
+    padding: 20px;
 }
 
 .game-container {
@@ -21,7 +22,7 @@ body {
     padding: 30px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     text-align: center;
-    max-width: 900px;
+    max-width: 1200px;
     width: 100%;
 }
 
@@ -29,26 +30,98 @@ h1 {
     font-size: 2.5rem;
     margin-bottom: 20px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .game-info {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
+    justify-content: space-around;
+    margin-bottom: 30px;
     font-size: 1.2rem;
     font-weight: bold;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 15px;
 }
 
-#gameCanvas {
-    border: 3px solid rgba(255, 255, 255, 0.3);
+.game-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.organisms-section, .characteristics-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.organisms-section h3, .characteristics-section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #4ecdc4;
+}
+
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    min-height: 200px;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    background: rgba(0, 0, 0, 0.2);
-    max-width: 100%;
-    height: auto;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border-color: #4ecdc4;
+}
+
+.card.selected {
+    background: rgba(78, 205, 196, 0.3);
+    border-color: #4ecdc4;
+    transform: scale(1.05);
+}
+
+.card.matched {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.card.wrong {
+    background: rgba(244, 67, 54, 0.3);
+    border-color: #f44336;
+    animation: shake 0.5s ease-in-out;
+}
+
+.card-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
 }
 
 .controls {
-    margin-top: 20px;
+    margin: 20px 0;
 }
 
 button {
@@ -74,11 +147,52 @@ button:active {
     transform: translateY(0);
 }
 
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .instructions {
-    margin-top: 15px;
-    font-size: 0.9rem;
-    opacity: 0.8;
-    line-height: 1.4;
+    margin: 20px 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.feedback {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feedback.correct {
+    background: rgba(76, 175, 80, 0.3);
+    color: #4CAF50;
+}
+
+.feedback.incorrect {
+    background: rgba(244, 67, 54, 0.3);
+    color: #f44336;
+}
+
+.feedback.hint {
+    background: rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
 @media (max-width: 768px) {
@@ -96,8 +210,17 @@ button:active {
         gap: 10px;
     }
     
-    #gameCanvas {
-        width: 100%;
-        height: auto;
+    .game-area {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .card {
+        min-height: 100px;
+        font-size: 0.8rem;
     }
 } 

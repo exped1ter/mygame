@@ -3,22 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Simple Game</title>
+    <title>Microbiology Matching Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <h1>My Simple Game</h1>
+        <h1>🧬 Microbiology Matching Game</h1>
         <div class="game-info">
             <div class="score">Score: <span id="score">0</span></div>
             <div class="lives">Lives: <span id="lives">3</span></div>
+            <div class="level">Level: <span id="level">1</span></div>
         </div>
-        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        
+        <div class="game-area">
+            <div class="organisms-section">
+                <h3>Microorganisms</h3>
+                <div id="organismsContainer" class="cards-container"></div>
+            </div>
+            
+            <div class="characteristics-section">
+                <h3>Characteristics</h3>
+                <div id="characteristicsContainer" class="cards-container"></div>
+            </div>
+        </div>
+        
         <div class="controls">
             <button id="startBtn">Start Game</button>
-            <button id="pauseBtn">Pause</button>
-            <p class="instructions">Use arrow keys to move the player. Collect the circles to score points!</p>
+            <button id="resetBtn">Reset</button>
+            <button id="hintBtn">Hint</button>
         </div>
+        
+        <div class="instructions">
+            <p>Match each microorganism with its correct characteristic! Click on a microorganism first, then click on its matching characteristic.</p>
+            <p>Get it right to score points, but be careful - wrong matches cost lives!</p>
+        </div>
+        
+        <div id="feedback" class="feedback"></div>
     </div>
     <script src="game.js"></script>
 </body>
