@@ -6,6 +6,7 @@ class MicrobiologyDragDropGame {
         this.gameRunning = false;
         this.matchedPairs = [];
         this.draggedElement = null;
+        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
         // Pool system for organisms and their characteristics
         this.organismPool = [];
@@ -142,6 +143,14 @@ class MicrobiologyDragDropGame {
         this.updateUI();
         this.renderCards();
         this.setGameState(false); // Disable interactions initially
+        
+        // Update instructions for touch devices
+        if (this.isTouchDevice) {
+            const instructionsText = document.getElementById('instructions-text');
+            if (instructionsText) {
+                instructionsText.textContent = 'Touch and drag the characteristic cards from the right and drop them onto the matching organisms on the left!';
+            }
+        }
     }
     
     initializePools() {
@@ -325,7 +334,7 @@ class MicrobiologyDragDropGame {
             <div class="card-type">${charData.type === 'microscopic' ? '🔬' : '🧫'}</div>
         `;
         
-        // Add drag event listeners
+        // Add drag event listeners for desktop
         card.addEventListener('dragstart', (e) => {
             this.draggedElement = card;
             card.classList.add('dragging');
@@ -337,6 +346,67 @@ class MicrobiologyDragDropGame {
             card.classList.remove('dragging');
             this.draggedElement = null;
         });
+        
+        // Add touch event listeners for mobile
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isDragging = false;
+        
+        card.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            isDragging = false;
+            
+            this.draggedElement = card;
+            card.classList.add('dragging');
+        }, { passive: false });
+        
+        card.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = Math.abs(touch.clientX - touchStartX);
+            const deltaY = Math.abs(touch.clientY - touchStartY);
+            
+            // Start dragging after a small movement threshold
+            if (!isDragging && (deltaX > 10 || deltaY > 10)) {
+                isDragging = true;
+            }
+            
+            if (isDragging) {
+                // Move the card with the touch
+                card.style.transform = `translate(${touch.clientX - touchStartX}px, ${touch.clientY - touchStartY}px)`;
+                card.style.zIndex = '1000';
+            }
+        }, { passive: false });
+        
+        card.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            
+            if (isDragging) {
+                const touch = e.changedTouches[0];
+                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                
+                // Find the organism card that was dropped on
+                const organismCard = elementBelow?.closest('.organism-card');
+                
+                if (organismCard) {
+                    console.log('Touch drop detected:', organismCard.dataset.organism);
+                    this.handleDrop(organismCard, card);
+                } else {
+                    console.log('No organism card found at drop location');
+                }
+                
+                // Reset card position
+                card.style.transform = '';
+                card.style.zIndex = '';
+            }
+            
+            card.classList.remove('dragging');
+            this.draggedElement = null;
+            isDragging = false;
+        }, { passive: false });
         
         return card;
     }
