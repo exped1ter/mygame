@@ -351,6 +351,7 @@ class MicrobiologyDragDropGame {
         let touchStartX = 0;
         let touchStartY = 0;
         let isDragging = false;
+        let originalRect = null;
         
         card.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -361,6 +362,17 @@ class MicrobiologyDragDropGame {
             
             this.draggedElement = card;
             card.classList.add('dragging');
+            
+            // Move the card to body to break out of container constraints
+            document.body.appendChild(card);
+            
+            // Get the original position relative to viewport
+            originalRect = card.getBoundingClientRect();
+            card.style.position = 'fixed';
+            card.style.left = originalRect.left + 'px';
+            card.style.top = originalRect.top + 'px';
+            card.style.width = originalRect.width + 'px';
+            card.style.height = originalRect.height + 'px';
         }, { passive: false });
         
         card.addEventListener('touchmove', (e) => {
@@ -368,8 +380,9 @@ class MicrobiologyDragDropGame {
             const touch = e.touches[0];
             
             if (isDragging) {
-                // Move the card with the touch immediately
-                card.style.transform = `translate(${touch.clientX - touchStartX}px, ${touch.clientY - touchStartY}px)`;
+                // Move the card with the touch immediately using fixed positioning
+                card.style.left = (touch.clientX - touchStartX + originalRect.left) + 'px';
+                card.style.top = (touch.clientY - touchStartY + originalRect.top) + 'px';
                 card.style.zIndex = '9999';
             }
         }, { passive: false });
@@ -391,14 +404,25 @@ class MicrobiologyDragDropGame {
                     console.log('No organism card found at drop location');
                 }
                 
-                // Reset card position
-                card.style.transform = '';
+                // Reset card position and restore to original container
+                card.style.position = '';
+                card.style.left = '';
+                card.style.top = '';
+                card.style.width = '';
+                card.style.height = '';
                 card.style.zIndex = '';
+                
+                // Move card back to characteristics container
+                const characteristicsContainer = document.getElementById('characteristicsContainer');
+                if (characteristicsContainer && !card.classList.contains('matched')) {
+                    characteristicsContainer.appendChild(card);
+                }
             }
             
             card.classList.remove('dragging');
             this.draggedElement = null;
             isDragging = false;
+            originalRect = null;
         }, { passive: false });
         
         return card;
