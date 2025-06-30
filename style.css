@@ -100,6 +100,26 @@ h1 {
     border: 2px dashed rgba(255, 255, 255, 0.3);
     overflow-y: auto;
     min-height: 0;
+    max-height: 60vh;
+}
+
+/* Custom scrollbar for characteristics container */
+.characteristics-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.characteristics-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.characteristics-container::-webkit-scrollbar-thumb {
+    background: rgba(78, 205, 196, 0.5);
+    border-radius: 4px;
+}
+
+.characteristics-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(78, 205, 196, 0.7);
 }
 
 .organism-card {
@@ -143,6 +163,18 @@ h1 {
     background: rgba(244, 67, 54, 0.3);
     border-color: #f44336;
     animation: shake 0.5s ease-in-out;
+}
+
+.organism-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
+
+.organism-card.disabled:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: none;
 }
 
 .characteristic-card {
@@ -193,6 +225,23 @@ h1 {
     animation: disappear 0.3s ease-in-out;
 }
 
+.characteristic-card.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+    pointer-events: none;
+}
+
+.characteristic-card.disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.characteristic-card.disabled:active {
+    cursor: not-allowed;
+    transform: none;
+}
+
 .card-icon {
     font-size: 1.5rem;
     margin-bottom: 5px;
@@ -206,6 +255,21 @@ h1 {
 .card-description {
     font-size: 0.7rem;
     opacity: 0.8;
+}
+
+.progress-counter {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(78, 205, 196, 0.9);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .card-type {
@@ -251,6 +315,12 @@ button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+    background: linear-gradient(45deg, #999, #666);
+}
+
+button:disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .instructions {

@@ -7,6 +7,10 @@ class MicrobiologyDragDropGame {
         this.matchedPairs = [];
         this.draggedElement = null;
         
+        // Pool system for organisms and their characteristics
+        this.organismPool = [];
+        this.characteristicPool = [];
+        
         // Custom microbiology data with organisms and their characteristics
         this.microbiologyData = [
             {
@@ -137,6 +141,71 @@ class MicrobiologyDragDropGame {
     initializeGame() {
         this.updateUI();
         this.renderCards();
+        this.setGameState(false); // Disable interactions initially
+    }
+    
+    initializePools() {
+        // Reset pools with all organisms and their characteristics
+        this.organismPool = [...this.microbiologyData];
+        this.characteristicPool = [];
+        
+        // Build characteristic pool with organism tracking
+        this.organismPool.forEach(organism => {
+            organism.microscopicMorphology.forEach(char => {
+                this.characteristicPool.push({
+                    characteristic: char,
+                    organism: organism.organism,
+                    type: 'microscopic',
+                    matched: false
+                });
+            });
+            organism.culturalCharacteristics.forEach(char => {
+                this.characteristicPool.push({
+                    characteristic: char,
+                    organism: organism.organism,
+                    type: 'cultural',
+                    matched: false
+                });
+            });
+        });
+        
+        // Shuffle the characteristic pool
+        this.characteristicPool = this.shuffleArray(this.characteristicPool);
+    }
+    
+    setGameState(enabled) {
+        const organismCards = document.querySelectorAll('.organism-card');
+        const characteristicCards = document.querySelectorAll('.characteristic-card');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const hintBtn = document.getElementById('hintBtn');
+        
+        organismCards.forEach(card => {
+            if (enabled) {
+                card.classList.remove('disabled');
+                card.style.pointerEvents = 'auto';
+            } else {
+                card.classList.add('disabled');
+                card.style.pointerEvents = 'none';
+            }
+        });
+        
+        characteristicCards.forEach(card => {
+            if (enabled) {
+                card.classList.remove('disabled');
+                card.draggable = true;
+                card.style.pointerEvents = 'auto';
+            } else {
+                card.classList.add('disabled');
+                card.draggable = false;
+                card.style.pointerEvents = 'none';
+            }
+        });
+        
+        // Enable/disable buttons
+        startBtn.disabled = enabled;
+        resetBtn.disabled = !enabled;
+        hintBtn.disabled = !enabled;
     }
     
     startGame() {
@@ -145,8 +214,10 @@ class MicrobiologyDragDropGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
+        this.initializePools();
         this.updateUI();
         this.renderCards();
+        this.setGameState(true); // Enable interactions
         this.showFeedback("Game started! Drag characteristics onto the matching organisms.", "hint");
     }
     
@@ -156,8 +227,10 @@ class MicrobiologyDragDropGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
+        this.initializePools();
         this.updateUI();
         this.renderCards();
+        this.setGameState(false); // Disable interactions
         this.showFeedback("Game reset. Click 'Start Game' to begin!", "hint");
     }
     
@@ -168,53 +241,29 @@ class MicrobiologyDragDropGame {
         organismsContainer.innerHTML = '';
         characteristicsContainer.innerHTML = '';
         
-        // Level progression: Specific number of characteristics per level
-        let characteristicsPerLevel;
-        if (this.level === 1) {
-            characteristicsPerLevel = 4; // Level 1: 4 characteristics
-        } else if (this.level === 2) {
-            characteristicsPerLevel = 6; // Level 2: 6 characteristics
-        } else if (this.level === 3) {
-            characteristicsPerLevel = 8; // Level 3: 8 characteristics
-        } else if (this.level === 4) {
-            characteristicsPerLevel = 10; // Level 4: 10 characteristics
-        } else if (this.level === 5) {
-            characteristicsPerLevel = 12; // Level 5: 12 characteristics (max level)
-        } else {
-            characteristicsPerLevel = 12; // Beyond level 5: stay at max
-        }
+        // Show organisms from the pool (up to 4)
+        const displayedOrganisms = this.organismPool.slice(0, 4);
         
-        // Show only 4 organisms on the left (2x2 grid)
-        const displayedOrganisms = this.microbiologyData.slice(0, 4);
-        
-        // Create organism cards (show only 4 organisms in 2x2 grid)
+        // Create organism cards
         displayedOrganisms.forEach((data, index) => {
             const organismCard = this.createOrganismCard(data, index);
             organismsContainer.appendChild(organismCard);
         });
         
-        // Get all characteristics that can be matched to the displayed organisms
+        // Determine how many characteristics to show based on level
+        const characteristicsPerLevel = this.getExpectedCharacteristicsCount();
+        
+        // Get characteristics that can be matched to the displayed organisms
         const availableCharacteristics = [];
-        displayedOrganisms.forEach(data => {
-            // Add microscopic morphology characteristics
-            data.microscopicMorphology.forEach(char => {
-                availableCharacteristics.push({
-                    characteristic: char,
-                    organism: data.organism,
-                    type: 'microscopic'
-                });
-            });
-            // Add cultural characteristics
-            data.culturalCharacteristics.forEach(char => {
-                availableCharacteristics.push({
-                    characteristic: char,
-                    organism: data.organism,
-                    type: 'cultural'
-                });
-            });
+        displayedOrganisms.forEach(organism => {
+            // Get unmatched characteristics for this organism
+            const organismCharacteristics = this.characteristicPool.filter(char => 
+                char.organism === organism.organism && !char.matched
+            );
+            availableCharacteristics.push(...organismCharacteristics);
         });
         
-        // Shuffle and select only the required number for this level
+        // Shuffle and select characteristics for this level
         const shuffledCharacteristics = this.shuffleArray(availableCharacteristics);
         const selectedCharacteristics = shuffledCharacteristics.slice(0, Math.min(characteristicsPerLevel, shuffledCharacteristics.length));
         
@@ -230,7 +279,12 @@ class MicrobiologyDragDropGame {
         card.dataset.organism = data.organism;
         card.dataset.index = index;
         
+        // Calculate progress for this organism
+        const totalCharacteristics = data.microscopicMorphology.length + data.culturalCharacteristics.length;
+        const matchedCharacteristics = this.matchedPairs.filter(pair => pair.organism === data.organism).length;
+        
         card.innerHTML = `
+            <div class="progress-counter">${matchedCharacteristics}/${totalCharacteristics}</div>
             <div class="card-icon">${data.icon}</div>
             <div class="card-text">${data.organism}</div>
             <div class="card-description">${data.description}</div>
@@ -260,6 +314,7 @@ class MicrobiologyDragDropGame {
         const card = document.createElement('div');
         card.className = `characteristic-card ${charData.type}-card`;
         card.dataset.characteristic = charData.characteristic;
+        card.dataset.organism = charData.organism;
         card.dataset.type = charData.type;
         card.dataset.index = index;
         card.draggable = true;
@@ -293,9 +348,21 @@ class MicrobiologyDragDropGame {
         const organismName = organismCard.dataset.organism;
         const characteristicText = characteristicCard.dataset.characteristic;
         const characteristicType = characteristicCard.dataset.type;
+        const characteristicOrganism = characteristicCard.dataset.organism;
+        
+        // Check if this characteristic has already been matched to this organism
+        const alreadyMatched = this.matchedPairs.some(pair => 
+            pair.organism === organismName && pair.characteristic === characteristicText
+        );
+        
+        if (alreadyMatched) {
+            // Already matched - show warning but don't lose life
+            this.showFeedback(`This characteristic has already been matched to ${organismName}!`, "hint");
+            return;
+        }
         
         // Check if this organism has this characteristic
-        const organismData = this.microbiologyData.find(data => data.organism === organismName);
+        const organismData = this.organismPool.find(data => data.organism === organismName);
         let isCorrectMatch = false;
         
         if (organismData) {
@@ -309,8 +376,32 @@ class MicrobiologyDragDropGame {
         if (isCorrectMatch) {
             // Correct match!
             this.score += 10;
-            this.matchedPairs.push(organismName);
-            this.matchedPairs.push(characteristicText);
+            
+            // Mark this characteristic as matched in the pool
+            const poolCharacteristic = this.characteristicPool.find(char => 
+                char.characteristic === characteristicText && 
+                char.organism === characteristicOrganism &&
+                char.type === characteristicType
+            );
+            if (poolCharacteristic) {
+                poolCharacteristic.matched = true;
+            }
+            
+            // Add to matched pairs
+            this.matchedPairs.push({
+                organism: organismName,
+                characteristic: characteristicText,
+                type: characteristicType
+            });
+            
+            console.log(`Match made: ${organismName} - ${characteristicText}`);
+            console.log(`Total matches for ${organismName}: ${this.matchedPairs.filter(pair => pair.organism === organismName).length}`);
+            
+            // Update progress counter for this organism
+            this.updateOrganismProgress(organismName);
+            
+            // Check if organism is completely matched BEFORE removing from pool
+            this.checkOrganismComplete(organismName);
             
             // Visual feedback for correct match
             organismCard.classList.add('matched');
@@ -329,7 +420,9 @@ class MicrobiologyDragDropGame {
             this.showFeedback(`Correct! ${organismName} matches with ${characteristicText}`, "correct");
             
             // Check if level is complete (all characteristic cards are gone)
-            this.checkLevelComplete();
+            setTimeout(() => {
+                this.checkLevelComplete();
+            }, 300);
         } else {
             // Wrong match!
             this.lives--;
@@ -351,6 +444,49 @@ class MicrobiologyDragDropGame {
         this.updateUI();
     }
     
+    checkOrganismComplete(organismName) {
+        const organism = this.organismPool.find(org => org.organism === organismName);
+        if (!organism) {
+            console.log(`Organism ${organismName} not found in pool, skipping completion check`);
+            return;
+        }
+        
+        // Calculate total characteristics for this organism
+        const totalCharacteristics = organism.microscopicMorphology.length + organism.culturalCharacteristics.length;
+        
+        // Count how many characteristics have been matched for this organism
+        const matchedCharacteristics = this.matchedPairs.filter(pair => pair.organism === organismName).length;
+        
+        // Check if all characteristics have been matched
+        const allMatched = matchedCharacteristics >= totalCharacteristics;
+        
+        console.log(`Checking ${organismName}: ${matchedCharacteristics}/${totalCharacteristics} - All matched: ${allMatched}`);
+        
+        if (allMatched) {
+            console.log(`Removing ${organismName} from pool and display`);
+            
+            // Remove organism from pool
+            this.organismPool = this.organismPool.filter(org => org.organism !== organismName);
+            
+            // Find and remove the organism card from the display
+            const organismCard = document.querySelector(`[data-organism="${organismName}"]`);
+            if (organismCard) {
+                console.log(`Found organism card for ${organismName}, removing...`);
+                organismCard.classList.add('matched');
+                setTimeout(() => {
+                    organismCard.remove();
+                    console.log(`Organism card for ${organismName} removed from DOM`);
+                    // After removing the card, check if we need to add a new organism to fill the display
+                    this.fillOrganismDisplay();
+                }, 500);
+            } else {
+                console.log(`Organism card for ${organismName} not found in DOM`);
+            }
+            
+            this.showFeedback(`🎉 ${organismName} completely matched! Removed from display.`, "correct");
+        }
+    }
+    
     checkLevelComplete() {
         // Check if all characteristic cards are gone (right column is empty)
         const characteristicsContainer = document.getElementById('characteristicsContainer');
@@ -359,23 +495,38 @@ class MicrobiologyDragDropGame {
         if (remainingCards.length === 0) {
             // Level complete! All characteristic cards have been matched
             
-            if (this.level >= 5) {
-                // Game completed! All 5 levels finished
+            // Check if game is complete (no more organisms or characteristics)
+            if (this.organismPool.length === 0 || this.characteristicPool.filter(char => !char.matched).length === 0) {
+                // Game completed! All organisms and characteristics matched
                 this.gameCompleted();
             } else {
                 // Move to next level
                 this.level++;
-                this.showFeedback(`🎉 Level ${this.level - 1} Complete! 🎉 Starting Level ${this.level}`, "correct");
+                
+                // Temporarily disable interactions during level transition
+                this.setGameState(false);
+                
+                // Show level completion message
+                this.showFeedback(`🎉 LEVEL ${this.level - 1} COMPLETE! 🎉`, "correct");
+                
+                // Show next level message after a delay
+                setTimeout(() => {
+                    this.showFeedback(`Starting Level ${this.level}...`, "hint");
+                }, 1500);
+                
+                // Start new level after delay
                 setTimeout(() => {
                     this.renderCards();
-                }, 2000);
+                    this.setGameState(true); // Re-enable interactions
+                }, 3000);
             }
         }
     }
     
     gameCompleted() {
         this.gameRunning = false;
-        this.showFeedback(`🏆 CONGRATULATIONS! 🏆 You've completed all 5 levels! Final Score: ${this.score}`, "correct");
+        this.setGameState(false); // Disable interactions
+        this.showFeedback(`🏆 CONGRATULATIONS! 🏆 You've completed all levels! Final Score: ${this.score}`, "correct");
         
         // Add a celebration effect
         setTimeout(() => {
@@ -385,6 +536,7 @@ class MicrobiologyDragDropGame {
     
     gameOver() {
         this.gameRunning = false;
+        this.setGameState(false); // Disable interactions
         this.showFeedback(`Game Over! Final Score: ${this.score}`, "incorrect");
     }
     
@@ -394,20 +546,21 @@ class MicrobiologyDragDropGame {
             return;
         }
         
-        // Get all organisms for hints
-        const allOrganisms = this.microbiologyData;
-        const unmatchedOrganisms = allOrganisms.filter(data => 
-            !this.matchedPairs.includes(data.organism)
-        );
+        // Get unmatched organisms from pool
+        const unmatchedOrganisms = this.organismPool;
         
         if (unmatchedOrganisms.length > 0) {
             const randomOrganism = unmatchedOrganisms[Math.floor(Math.random() * unmatchedOrganisms.length)];
-            const allCharacteristics = [
-                ...randomOrganism.microscopicMorphology,
-                ...randomOrganism.culturalCharacteristics
-            ];
-            const hint = allCharacteristics[Math.floor(Math.random() * allCharacteristics.length)];
-            this.showFeedback(`Hint: ${randomOrganism.organism} - ${hint}`, "hint");
+            const unmatchedCharacteristics = this.characteristicPool.filter(char => 
+                char.organism === randomOrganism.organism && !char.matched
+            );
+            
+            if (unmatchedCharacteristics.length > 0) {
+                const hint = unmatchedCharacteristics[Math.floor(Math.random() * unmatchedCharacteristics.length)];
+                this.showFeedback(`Hint: ${randomOrganism.organism} - ${hint.characteristic}`, "hint");
+            } else {
+                this.showFeedback(`Hint: ${randomOrganism.organism} is already completely matched!`, "hint");
+            }
         }
     }
     
@@ -420,6 +573,87 @@ class MicrobiologyDragDropGame {
             feedback.textContent = '';
             feedback.className = 'feedback';
         }, 3000);
+    }
+    
+    fillOrganismDisplay() {
+        const organismsContainer = document.getElementById('organismsContainer');
+        const currentOrganismCards = organismsContainer.querySelectorAll('.organism-card');
+        const maxOrganisms = 4; // Maximum organisms to display
+        
+        // If we have fewer than max organisms displayed and there are organisms in the pool
+        if (currentOrganismCards.length < maxOrganisms && this.organismPool.length > 0) {
+            const organismsToAdd = maxOrganisms - currentOrganismCards.length;
+            const availableOrganisms = this.organismPool.filter(org => 
+                !Array.from(currentOrganismCards).some(card => card.dataset.organism === org.organism)
+            );
+            
+            // Add new organisms to fill the display
+            for (let i = 0; i < Math.min(organismsToAdd, availableOrganisms.length); i++) {
+                const organismData = availableOrganisms[i];
+                const organismCard = this.createOrganismCard(organismData, currentOrganismCards.length + i);
+                organismsContainer.appendChild(organismCard);
+            }
+            
+            // After adding new organisms, refresh the characteristics to include new matches
+            this.refreshCharacteristics();
+        }
+    }
+    
+    refreshCharacteristics() {
+        const characteristicsContainer = document.getElementById('characteristicsContainer');
+        const currentCharacteristics = characteristicsContainer.querySelectorAll('.characteristic-card');
+        
+        // Get all currently displayed organisms
+        const displayedOrganisms = Array.from(document.querySelectorAll('.organism-card')).map(card => 
+            card.dataset.organism
+        );
+        
+        // Get characteristics that can be matched to the displayed organisms
+        const availableCharacteristics = [];
+        displayedOrganisms.forEach(organismName => {
+            const organismCharacteristics = this.characteristicPool.filter(char => 
+                char.organism === organismName && !char.matched
+            );
+            availableCharacteristics.push(...organismCharacteristics);
+        });
+        
+        // If we have fewer characteristics than expected for the level, add more
+        const expectedCharacteristics = this.getExpectedCharacteristicsCount();
+        if (currentCharacteristics.length < expectedCharacteristics && availableCharacteristics.length > 0) {
+            const characteristicsToAdd = expectedCharacteristics - currentCharacteristics.length;
+            const shuffledCharacteristics = this.shuffleArray(availableCharacteristics);
+            
+            for (let i = 0; i < Math.min(characteristicsToAdd, shuffledCharacteristics.length); i++) {
+                const charData = shuffledCharacteristics[i];
+                const characteristicCard = this.createCharacteristicCard(charData, currentCharacteristics.length + i);
+                characteristicsContainer.appendChild(characteristicCard);
+            }
+        }
+    }
+    
+    getExpectedCharacteristicsCount() {
+        if (this.level === 1) return 4;
+        else if (this.level === 2) return 6;
+        else if (this.level === 3) return 8;
+        else if (this.level === 4) return 10;
+        else return 12;
+    }
+    
+    updateOrganismProgress(organismName) {
+        // Find the organism card and update its progress counter
+        const organismCard = document.querySelector(`[data-organism="${organismName}"]`);
+        if (organismCard) {
+            const organismData = this.organismPool.find(org => org.organism === organismName);
+            if (organismData) {
+                const totalCharacteristics = organismData.microscopicMorphology.length + organismData.culturalCharacteristics.length;
+                const matchedCharacteristics = this.matchedPairs.filter(pair => pair.organism === organismName).length;
+                
+                const progressCounter = organismCard.querySelector('.progress-counter');
+                if (progressCounter) {
+                    progressCounter.textContent = `${matchedCharacteristics}/${totalCharacteristics}`;
+                }
+            }
+        }
     }
     
     updateUI() {
