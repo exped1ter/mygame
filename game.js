@@ -60,7 +60,7 @@ class MicrobiologyDragDropGame {
                 microscopicMorphology: ["Gram-negative bacilli"],
                 culturalCharacteristics: [
                     "Atmosphere: 37°C, O₂",
-                    "MAC: LF/NLF",
+                    "MAC: LF",
                     "SMAC: NSF (colourless)"
                 ]
             },
@@ -83,7 +83,7 @@ class MicrobiologyDragDropGame {
                 culturalCharacteristics: [
                     "Atmosphere: 37°C, O₂",
                     "BA: large, round, β-hemolytic",
-                    "MAC: LF or NLF"
+                    "MAC: NLF"
                 ]
             },
             {
@@ -94,7 +94,7 @@ class MicrobiologyDragDropGame {
                 culturalCharacteristics: [
                     "Atmosphere: 37°C, O₂",
                     "BA: grey, shiny, nonhemolytic",
-                    "MAC: LF or NLF"
+                    "MAC: NLF"
                 ]
             },
             {
@@ -533,22 +533,28 @@ class MicrobiologyDragDropGame {
         `;
         
         // Add drag and drop event listeners
+        let soundPlayed = false;
         card.addEventListener('dragover', (e) => {
             e.preventDefault();
             if (!card.classList.contains('drag-over')) {
                 card.classList.add('drag-over');
-                this.playSound('hint'); // Play gentle sound when hovering over organism
+                if (!soundPlayed) {
+                    this.playSound('hint'); // Play gentle sound when hovering over organism
+                    soundPlayed = true;
+                }
             }
         });
         
         card.addEventListener('dragleave', (e) => {
             e.preventDefault();
             card.classList.remove('drag-over');
+            soundPlayed = false; // Reset sound flag when leaving
         });
         
         card.addEventListener('drop', (e) => {
             e.preventDefault();
             card.classList.remove('drag-over');
+            soundPlayed = false; // Reset sound flag on drop
             this.handleDrop(card, this.draggedElement);
         });
         
@@ -588,6 +594,7 @@ class MicrobiologyDragDropGame {
         let touchStartY = 0;
         let isDragging = false;
         let ghostElement = null;
+        let lastHoveredCard = null; // Track which card we last hovered over
         
         card.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -635,7 +642,11 @@ class MicrobiologyDragDropGame {
                 // Add highlight to organism card under ghost
                 if (organismCard && !organismCard.classList.contains('drag-over')) {
                     organismCard.classList.add('drag-over');
-                    this.playSound('hint'); // Play gentle sound when hovering over organism
+                    // Only play sound if we're hovering over a different card
+                    if (lastHoveredCard !== organismCard) {
+                        this.playSound('hint'); // Play gentle sound when hovering over organism
+                        lastHoveredCard = organismCard;
+                    }
                 }
             }
         }, { passive: false });
@@ -674,6 +685,7 @@ class MicrobiologyDragDropGame {
             card.classList.remove('dragging');
             this.draggedElement = null;
             isDragging = false;
+            lastHoveredCard = null; // Reset hover tracking
         }, { passive: false });
         
         // Handle touch cancel (e.g., when user touches elsewhere)
@@ -696,6 +708,7 @@ class MicrobiologyDragDropGame {
             card.classList.remove('dragging');
             this.draggedElement = null;
             isDragging = false;
+            lastHoveredCard = null; // Reset hover tracking
         }, { passive: false });
         
         return card;
