@@ -351,6 +351,7 @@ class MicrobiologyDragDropGame {
         let touchStartX = 0;
         let touchStartY = 0;
         let isDragging = false;
+        let ghostElement = null;
         
         card.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -361,16 +362,43 @@ class MicrobiologyDragDropGame {
             
             this.draggedElement = card;
             card.classList.add('dragging');
+            
+            // Create ghost element
+            ghostElement = card.cloneNode(true);
+            ghostElement.classList.add('ghost-element');
+            ghostElement.style.position = 'fixed';
+            ghostElement.style.pointerEvents = 'none';
+            ghostElement.style.zIndex = '9999';
+            ghostElement.style.opacity = '0.8';
+            ghostElement.style.transform = 'scale(1.1)';
+            document.body.appendChild(ghostElement);
+            
+            // Hide original card
+            card.style.opacity = '0.3';
         }, { passive: false });
         
         card.addEventListener('touchmove', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
             
-            if (isDragging) {
-                // Move the card with the touch immediately
-                card.style.transform = `translate(${touch.clientX - touchStartX}px, ${touch.clientY - touchStartY}px)`;
-                card.style.zIndex = '9999';
+            if (isDragging && ghostElement) {
+                // Move ghost element with the touch
+                ghostElement.style.left = `${touch.clientX - ghostElement.offsetWidth / 2}px`;
+                ghostElement.style.top = `${touch.clientY - ghostElement.offsetHeight / 2}px`;
+                
+                // Check for organism cards under the ghost
+                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                const organismCard = elementBelow?.closest('.organism-card');
+                
+                // Remove highlight from all organism cards
+                document.querySelectorAll('.organism-card').forEach(org => {
+                    org.classList.remove('drag-over');
+                });
+                
+                // Add highlight to organism card under ghost
+                if (organismCard) {
+                    organismCard.classList.add('drag-over');
+                }
             }
         }, { passive: false });
         
@@ -391,11 +419,42 @@ class MicrobiologyDragDropGame {
                     console.log('No organism card found at drop location');
                 }
                 
-                // Reset card position
-                card.style.transform = '';
-                card.style.zIndex = '';
+                // Remove highlight from all organism cards
+                document.querySelectorAll('.organism-card').forEach(org => {
+                    org.classList.remove('drag-over');
+                });
             }
             
+            // Clean up ghost element
+            if (ghostElement) {
+                ghostElement.remove();
+                ghostElement = null;
+            }
+            
+            // Reset original card
+            card.style.opacity = '';
+            card.classList.remove('dragging');
+            this.draggedElement = null;
+            isDragging = false;
+        }, { passive: false });
+        
+        // Handle touch cancel (e.g., when user touches elsewhere)
+        card.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            
+            // Remove highlight from all organism cards
+            document.querySelectorAll('.organism-card').forEach(org => {
+                org.classList.remove('drag-over');
+            });
+            
+            // Clean up ghost element
+            if (ghostElement) {
+                ghostElement.remove();
+                ghostElement = null;
+            }
+            
+            // Reset original card
+            card.style.opacity = '';
             card.classList.remove('dragging');
             this.draggedElement = null;
             isDragging = false;
