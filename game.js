@@ -8,6 +8,23 @@ class MicrobiologyDragDropGame {
         this.draggedElement = null;
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
+        // Sound system
+        this.sounds = {
+            correct: null,
+            incorrect: null,
+            button: null,
+            levelComplete: null,
+            gameComplete: null,
+            gameOver: null,
+            explosion: null,
+            hint: null,
+            start: null,
+            reset: null
+        };
+        this.soundEnabled = true;
+        this.volume = 0.5; // Default volume 50%
+        this.audioContext = null;
+        
         // Pool system for organisms and their characteristics
         this.organismPool = [];
         this.characteristicPool = [];
@@ -121,22 +138,236 @@ class MicrobiologyDragDropGame {
             }
         ];
         
+        this.initializeAudio();
         this.setupEventListeners();
         this.initializeGame();
     }
     
+    initializeAudio() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log('Audio not supported');
+            this.soundEnabled = false;
+        }
+    }
+    
+    playSound(type) {
+        if (!this.soundEnabled || !this.audioContext) return;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // Apply volume control
+            const baseVolume = this.getBaseVolume(type);
+            const finalVolume = baseVolume * this.volume;
+            
+            switch (type) {
+                case 'correct':
+                    // Success sound - ascending notes
+                    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, this.audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    
+                    // Second note
+                    setTimeout(() => {
+                        const osc2 = this.audioContext.createOscillator();
+                        const gain2 = this.audioContext.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(this.audioContext.destination);
+                        osc2.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+                        osc2.frequency.exponentialRampToValueAtTime(1400, this.audioContext.currentTime + 0.1);
+                        gain2.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                        osc2.start(this.audioContext.currentTime);
+                        osc2.stop(this.audioContext.currentTime + 0.1);
+                    }, 100);
+                    break;
+                    
+                case 'incorrect':
+                    // Error sound - descending notes
+                    oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.2);
+                    break;
+                    
+                case 'button':
+                    // Button click sound
+                    oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, this.audioContext.currentTime + 0.05);
+                    gainNode.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.05);
+                    break;
+                    
+                case 'levelComplete':
+                    // Level completion - ascending arpeggio
+                    const notes = [800, 1000, 1200, 1400];
+                    notes.forEach((freq, index) => {
+                        setTimeout(() => {
+                            const osc = this.audioContext.createOscillator();
+                            const gain = this.audioContext.createGain();
+                            osc.connect(gain);
+                            gain.connect(this.audioContext.destination);
+                            osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                            gain.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                            osc.start(this.audioContext.currentTime);
+                            osc.stop(this.audioContext.currentTime + 0.1);
+                        }, index * 100);
+                    });
+                    break;
+                    
+                case 'gameComplete':
+                    // Game completion - victory fanfare
+                    const victoryNotes = [800, 1000, 1200, 1400, 1600, 1400, 1200, 1000, 800];
+                    victoryNotes.forEach((freq, index) => {
+                        setTimeout(() => {
+                            const osc = this.audioContext.createOscillator();
+                            const gain = this.audioContext.createGain();
+                            osc.connect(gain);
+                            gain.connect(this.audioContext.destination);
+                            osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                            gain.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                            osc.start(this.audioContext.currentTime);
+                            osc.stop(this.audioContext.currentTime + 0.1);
+                        }, index * 80);
+                    });
+                    break;
+                    
+                case 'gameOver':
+                    // Game over - sad descending notes
+                    const gameOverNotes = [600, 500, 400, 300];
+                    gameOverNotes.forEach((freq, index) => {
+                        setTimeout(() => {
+                            const osc = this.audioContext.createOscillator();
+                            const gain = this.audioContext.createGain();
+                            osc.connect(gain);
+                            gain.connect(this.audioContext.destination);
+                            osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+                            gain.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+                            osc.start(this.audioContext.currentTime);
+                            osc.stop(this.audioContext.currentTime + 0.2);
+                        }, index * 200);
+                    });
+                    break;
+                    
+                case 'explosion':
+                    // Explosion sound - noise burst
+                    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    break;
+                    
+                case 'hint':
+                    // Hint sound - gentle ping
+                    oscillator.frequency.setValueAtTime(700, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(900, this.audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    break;
+                    
+                case 'start':
+                    // Start game sound
+                    oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(800, this.audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    break;
+                    
+                case 'reset':
+                    // Reset sound
+                    oscillator.frequency.setValueAtTime(500, this.audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(300, this.audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(finalVolume, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    break;
+            }
+        } catch (e) {
+            console.log('Sound playback error:', e);
+        }
+    }
+    
+    getBaseVolume(type) {
+        switch (type) {
+            case 'correct': return 0.15;
+            case 'incorrect': return 0.12;
+            case 'button': return 0.08;
+            case 'levelComplete': return 0.12;
+            case 'gameComplete': return 0.15;
+            case 'gameOver': return 0.12;
+            case 'explosion': return 0.1;
+            case 'hint': return 0.06;
+            case 'start': return 0.1;
+            case 'reset': return 0.1;
+            default: return 0.1;
+        }
+    }
+    
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        const soundBtn = document.getElementById('soundBtn');
+        if (soundBtn) {
+            soundBtn.textContent = this.soundEnabled ? '🔊' : '🔇';
+            soundBtn.title = this.soundEnabled ? 'Disable Sound' : 'Enable Sound';
+        }
+        this.playSound('button');
+    }
+    
     setupEventListeners() {
         document.getElementById('startBtn').addEventListener('click', () => {
+            this.playSound('start');
             this.startGame();
         });
         
         document.getElementById('resetBtn').addEventListener('click', () => {
+            this.playSound('reset');
             this.resetGame();
         });
         
         document.getElementById('hintBtn').addEventListener('click', () => {
+            this.playSound('hint');
             this.showHint();
         });
+        
+        // Add sound toggle button event listener
+        const soundBtn = document.getElementById('soundBtn');
+        if (soundBtn) {
+            soundBtn.addEventListener('click', () => {
+                this.toggleSound();
+            });
+        }
+        
+        // Add volume slider event listener
+        const volumeSlider = document.getElementById('volumeSlider');
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', (e) => {
+                this.volume = e.target.value / 100;
+                this.playSound('button'); // Play test sound when adjusting volume
+            });
+        }
     }
     
     initializeGame() {
@@ -304,7 +535,10 @@ class MicrobiologyDragDropGame {
         // Add drag and drop event listeners
         card.addEventListener('dragover', (e) => {
             e.preventDefault();
-            card.classList.add('drag-over');
+            if (!card.classList.contains('drag-over')) {
+                card.classList.add('drag-over');
+                this.playSound('hint'); // Play gentle sound when hovering over organism
+            }
         });
         
         card.addEventListener('dragleave', (e) => {
@@ -339,6 +573,7 @@ class MicrobiologyDragDropGame {
         card.addEventListener('dragstart', (e) => {
             this.draggedElement = card;
             card.classList.add('dragging');
+            this.playSound('button'); // Play sound when starting to drag
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/html', card.outerHTML);
         });
@@ -363,6 +598,7 @@ class MicrobiologyDragDropGame {
             
             this.draggedElement = card;
             card.classList.add('dragging');
+            this.playSound('button'); // Play sound when starting to drag
             
             // Create ghost element
             ghostElement = card.cloneNode(true);
@@ -397,8 +633,9 @@ class MicrobiologyDragDropGame {
                 });
                 
                 // Add highlight to organism card under ghost
-                if (organismCard) {
+                if (organismCard && !organismCard.classList.contains('drag-over')) {
                     organismCard.classList.add('drag-over');
+                    this.playSound('hint'); // Play gentle sound when hovering over organism
                 }
             }
         }, { passive: false });
@@ -500,6 +737,7 @@ class MicrobiologyDragDropGame {
         if (isCorrectMatch) {
             // Correct match!
             this.score += 10;
+            this.playSound('correct');
             
             // Mark this characteristic as matched in the pool
             const poolCharacteristic = this.characteristicPool.find(char => 
@@ -550,6 +788,7 @@ class MicrobiologyDragDropGame {
         } else {
             // Wrong match!
             this.lives--;
+            this.playSound('incorrect');
             organismCard.classList.add('wrong-drop');
             characteristicCard.classList.add('wrong-drop');
             
@@ -629,6 +868,7 @@ class MicrobiologyDragDropGame {
             } else {
                 // Move to next level
                 this.level++;
+                this.playSound('levelComplete');
                 
                 // Temporarily disable interactions during level transition
                 this.setGameState(false);
@@ -654,6 +894,7 @@ class MicrobiologyDragDropGame {
     gameCompleted() {
         this.gameRunning = false;
         this.setGameState(false); // Disable interactions
+        this.playSound('gameComplete');
         this.showFeedback(`🏆 CONGRATULATIONS! 🏆 You've completed all levels! Final Score: ${this.score}`, "correct");
         
         // Add a celebration effect
@@ -665,6 +906,7 @@ class MicrobiologyDragDropGame {
     gameOver() {
         this.gameRunning = false;
         this.setGameState(false); // Disable interactions
+        this.playSound('gameOver');
         this.showFeedback(`Game Over! Final Score: ${this.score}`, "incorrect");
     }
     
@@ -716,6 +958,9 @@ class MicrobiologyDragDropGame {
         // Add explosion class to the organism card
         organismCard.classList.add('exploding');
         
+        // Play explosion sound
+        this.playSound('explosion');
+        
         // Create explosion particles
         const rect = organismCard.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -745,27 +990,6 @@ class MicrobiologyDragDropGame {
                     particle.parentNode.removeChild(particle);
                 }
             }, 1000);
-        }
-        
-        // Add sound effect (optional - browser compatibility)
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
-            
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
-        } catch (e) {
-            // Sound not supported, continue without it
         }
     }
     
