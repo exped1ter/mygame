@@ -4,26 +4,10 @@
     box-sizing: border-box;
 }
 
-html {
-    height: 100%;
-    overflow: hidden;
-    -webkit-overflow-scrolling: touch;
-    position: fixed;
-    width: 100%;
-}
-
-:root {
-    --vh: 1vh;
-}
-
 body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
-    background: -webkit-linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
     height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for mobile */
-    height: calc(var(--vh, 1vh) * 100); /* iOS Safari fallback */
-    min-height: 100vh; /* Fallback for older browsers */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -36,18 +20,10 @@ body {
     user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
-    position: fixed;
-    width: 100%;
-    top: 0;
-    left: 0;
-    -webkit-transform: translateZ(0); /* Force hardware acceleration */
-    transform: translateZ(0);
 }
 
 .game-container {
     background: rgba(255, 255, 255, 0.1);
-    background: -webkit-linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-radius: clamp(10px, 2vw, 20px);
     padding: clamp(10px, 2vw, 20px);
@@ -60,8 +36,6 @@ body {
     min-height: 0;
     max-width: 1200px;
     max-height: 800px;
-    -webkit-transform: translateZ(0); /* Force hardware acceleration */
-    transform: translateZ(0);
 }
 
 /* Title Section */
@@ -104,13 +78,10 @@ h1 {
 
 .organisms-section, .characteristics-section {
     background: rgba(255, 255, 255, 0.05);
-    background: -webkit-linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
     border-radius: clamp(8px, 2vw, 15px);
     padding: clamp(8px, 2vw, 15px);
     display: flex;
     flex-direction: column;
-    -webkit-transform: translateZ(0); /* Force hardware acceleration */
-    transform: translateZ(0);
 }
 
 .organisms-section h3, .characteristics-section h3 {
@@ -164,7 +135,6 @@ h1 {
 
 .organism-card {
     background: rgba(255, 255, 255, 0.1);
-    background: -webkit-linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
     border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: clamp(4px, 1.5vw, 8px);
     padding: clamp(8px, 2vw, 12px);
@@ -178,8 +148,6 @@ h1 {
     line-height: 1.3;
     transition: all 0.3s ease;
     position: relative;
-    -webkit-transform: translateZ(0); /* Force hardware acceleration */
-    transform: translateZ(0);
 }
 
 .organism-card:hover {
@@ -239,7 +207,6 @@ h1 {
 
 .characteristic-card {
     background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-    background: -webkit-linear-gradient(45deg, #ff6b6b, #ee5a24);
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: clamp(4px, 1.5vw, 8px);
     padding: clamp(6px, 1.5vw, 10px);
@@ -252,19 +219,15 @@ h1 {
     user-select: none;
     flex-shrink: 0;
     position: relative;
-    -webkit-transform: translateZ(0); /* Force hardware acceleration */
-    transform: translateZ(0);
 }
 
 .characteristic-card.microscopic-card {
     background: linear-gradient(45deg, #4facfe, #00f2fe);
-    background: -webkit-linear-gradient(45deg, #4facfe, #00f2fe);
     border-color: rgba(79, 172, 254, 0.5);
 }
 
 .characteristic-card.cultural-card {
     background: linear-gradient(45deg, #43e97b, #38f9d7);
-    background: -webkit-linear-gradient(45deg, #43e97b, #38f9d7);
     border-color: rgba(67, 233, 123, 0.5);
 }
 
@@ -301,12 +264,6 @@ h1 {
     transition: none !important;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4) !important;
     z-index: 9999 !important;
-}
-
-/* Prevent layout shifts from cards in body */
-body > .characteristic-card {
-    position: fixed !important;
-    pointer-events: none !important;
 }
 
 .characteristic-card.matched {
@@ -381,7 +338,6 @@ body > .characteristic-card {
 
 button {
     background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-    background: -webkit-linear-gradient(45deg, #ff6b6b, #ee5a24);
     border: none;
     color: white;
     padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
@@ -392,8 +348,6 @@ button {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    -webkit-transform: translateZ(0); /* Force hardware acceleration */
-    transform: translateZ(0);
 }
 
 button:hover {
@@ -557,80 +511,4 @@ button:disabled:hover {
     border-radius: 15px;
     background: rgba(255, 255, 255, 0.1);
     font-weight: bold;
-}
-
-/* Safari-specific fixes */
-@supports (-webkit-appearance: none) {
-    /* Force hardware acceleration for Safari */
-    .game-container,
-    .organisms-section,
-    .characteristics-section,
-    .organism-card,
-    .characteristic-card,
-    button {
-        -webkit-transform: translate3d(0, 0, 0);
-        transform: translate3d(0, 0, 0);
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-        -webkit-perspective: 1000;
-        perspective: 1000;
-    }
-    
-    /* Ensure proper rendering of gradients in Safari */
-    body {
-        background: -webkit-linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #667eea 100%);
-    }
-    
-    .game-container {
-        background: -webkit-linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    }
-    
-    .organisms-section,
-    .characteristics-section {
-        background: -webkit-linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-    }
-    
-    .organism-card {
-        background: -webkit-linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    }
-    
-    .characteristic-card {
-        background: -webkit-linear-gradient(45deg, #ff6b6b, #ee5a24);
-    }
-    
-    .characteristic-card.microscopic-card {
-        background: -webkit-linear-gradient(45deg, #4facfe, #00f2fe);
-    }
-    
-    .characteristic-card.cultural-card {
-        background: -webkit-linear-gradient(45deg, #43e97b, #38f9d7);
-    }
-    
-    button {
-        background: -webkit-linear-gradient(45deg, #ff6b6b, #ee5a24);
-    }
-}
-
-/* iOS Safari specific fixes */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-    /* Ensure proper viewport handling */
-    html, body {
-        -webkit-text-size-adjust: 100%;
-        -ms-text-size-adjust: 100%;
-        text-size-adjust: 100%;
-    }
-    
-    /* Fix for iOS Safari rendering issues */
-    .game-container {
-        -webkit-overflow-scrolling: touch;
-        overflow-scrolling: touch;
-    }
-    
-    /* Ensure cards are visible */
-    .organism-card,
-    .characteristic-card {
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: flex !important;
-    }
 } 

@@ -8,9 +8,6 @@ class MicrobiologyDragDropGame {
         this.draggedElement = null;
         this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
-        // Prevent viewport changes on mobile
-        this.preventViewportChanges();
-        
         // Pool system for organisms and their characteristics
         this.organismPool = [];
         this.characteristicPool = [];
@@ -192,9 +189,6 @@ class MicrobiologyDragDropGame {
         const resetBtn = document.getElementById('resetBtn');
         const hintBtn = document.getElementById('hintBtn');
         
-        // Clean up any cards that might be stuck in the body
-        this.cleanupBodyCards();
-        
         organismCards.forEach(card => {
             if (enabled) {
                 card.classList.remove('disabled');
@@ -229,7 +223,6 @@ class MicrobiologyDragDropGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
-        this.cleanupBodyCards(); // Clean up any stuck cards
         this.initializePools();
         this.updateUI();
         this.renderCards();
@@ -243,7 +236,6 @@ class MicrobiologyDragDropGame {
         this.lives = 3;
         this.level = 1;
         this.matchedPairs = [];
-        this.cleanupBodyCards(); // Clean up any stuck cards
         this.initializePools();
         this.updateUI();
         this.renderCards();
@@ -359,7 +351,6 @@ class MicrobiologyDragDropGame {
         let touchStartX = 0;
         let touchStartY = 0;
         let isDragging = false;
-        let originalRect = null;
         
         card.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -370,17 +361,6 @@ class MicrobiologyDragDropGame {
             
             this.draggedElement = card;
             card.classList.add('dragging');
-            
-            // Move the card to body to break out of container constraints
-            document.body.appendChild(card);
-            
-            // Get the original position relative to viewport
-            originalRect = card.getBoundingClientRect();
-            card.style.position = 'fixed';
-            card.style.left = originalRect.left + 'px';
-            card.style.top = originalRect.top + 'px';
-            card.style.width = originalRect.width + 'px';
-            card.style.height = originalRect.height + 'px';
         }, { passive: false });
         
         card.addEventListener('touchmove', (e) => {
@@ -388,29 +368,9 @@ class MicrobiologyDragDropGame {
             const touch = e.touches[0];
             
             if (isDragging) {
-                // Position card centered on finger
-                const cardWidth = originalRect.width;
-                const cardHeight = originalRect.height;
-                card.style.left = (touch.clientX - cardWidth / 2) + 'px';
-                card.style.top = (touch.clientY - cardHeight / 2) + 'px';
+                // Move the card with the touch immediately
+                card.style.transform = `translate(${touch.clientX - touchStartX}px, ${touch.clientY - touchStartY}px)`;
                 card.style.zIndex = '9999';
-                
-                // Temporarily hide the dragged card to check what's underneath
-                card.style.visibility = 'hidden';
-                const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-                card.style.visibility = 'visible';
-                
-                const organismCard = elementBelow?.closest('.organism-card');
-                
-                // Remove highlight from all organism cards
-                document.querySelectorAll('.organism-card').forEach(org => {
-                    org.classList.remove('drag-over');
-                });
-                
-                // Add highlight to organism card under finger
-                if (organismCard) {
-                    organismCard.classList.add('drag-over');
-                }
             }
         }, { passive: false });
         
@@ -419,11 +379,7 @@ class MicrobiologyDragDropGame {
             
             if (isDragging) {
                 const touch = e.changedTouches[0];
-                
-                // Temporarily hide the dragged card to check what's underneath
-                card.style.visibility = 'hidden';
                 const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-                card.style.visibility = 'visible';
                 
                 // Find the organism card that was dropped on
                 const organismCard = elementBelow?.closest('.organism-card');
@@ -435,30 +391,14 @@ class MicrobiologyDragDropGame {
                     console.log('No organism card found at drop location');
                 }
                 
-                // Clear all drag-over highlights
-                document.querySelectorAll('.organism-card').forEach(org => {
-                    org.classList.remove('drag-over');
-                });
-                
-                // Reset card position and restore to original container
-                card.style.position = '';
-                card.style.left = '';
-                card.style.top = '';
-                card.style.width = '';
-                card.style.height = '';
+                // Reset card position
+                card.style.transform = '';
                 card.style.zIndex = '';
-                
-                // Move card back to characteristics container
-                const characteristicsContainer = document.getElementById('characteristicsContainer');
-                if (characteristicsContainer && !card.classList.contains('matched')) {
-                    characteristicsContainer.appendChild(card);
-                }
             }
             
             card.classList.remove('dragging');
             this.draggedElement = null;
             isDragging = false;
-            originalRect = null;
         }, { passive: false });
         
         return card;
@@ -533,12 +473,7 @@ class MicrobiologyDragDropGame {
             
             // Remove the characteristic card after animation
             setTimeout(() => {
-                // Make sure to remove from body if it's there
-                if (characteristicCard.parentNode === document.body) {
-                    document.body.removeChild(characteristicCard);
-                } else {
-                    characteristicCard.remove();
-                }
+                characteristicCard.remove();
             }, 300);
             
             // Return organism card to normal after 1 second
@@ -648,7 +583,6 @@ class MicrobiologyDragDropGame {
                 
                 // Start new level after delay
                 setTimeout(() => {
-                    this.cleanupBodyCards(); // Clean up any stuck cards
                     this.renderCards();
                     this.setGameState(true); // Re-enable interactions
                 }, 3000);
@@ -795,70 +729,6 @@ class MicrobiologyDragDropGame {
         document.getElementById('score').textContent = this.score;
         document.getElementById('lives').textContent = this.lives;
         document.getElementById('level').textContent = this.level;
-    }
-    
-    cleanupBodyCards() {
-        // Remove any characteristic cards that might be stuck in the body
-        const bodyCards = document.body.querySelectorAll('.characteristic-card');
-        bodyCards.forEach(card => {
-            if (card.parentNode === document.body) {
-                document.body.removeChild(card);
-            }
-        });
-    }
-    
-    preventViewportChanges() {
-        // Prevent zooming and viewport changes on mobile
-        if (this.isTouchDevice) {
-            // Prevent double-tap zoom
-            let lastTouchEnd = 0;
-            document.addEventListener('touchend', (event) => {
-                const now = (new Date()).getTime();
-                if (now - lastTouchEnd <= 300) {
-                    event.preventDefault();
-                }
-                lastTouchEnd = now;
-            }, false);
-            
-            // Prevent pinch zoom
-            document.addEventListener('gesturestart', (event) => {
-                event.preventDefault();
-            });
-            
-            document.addEventListener('gesturechange', (event) => {
-                event.preventDefault();
-            });
-            
-            document.addEventListener('gestureend', (event) => {
-                event.preventDefault();
-            });
-            
-            // Prevent viewport changes
-            let viewport = document.querySelector('meta[name=viewport]');
-            if (viewport) {
-                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover');
-            }
-            
-            // iOS Safari specific fixes
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                // Force repaint to fix rendering issues
-                setTimeout(() => {
-                    document.body.style.display = 'none';
-                    document.body.offsetHeight; // Force reflow
-                    document.body.style.display = 'flex';
-                }, 100);
-                
-                // Ensure proper viewport height
-                const setViewportHeight = () => {
-                    const vh = window.innerHeight * 0.01;
-                    document.documentElement.style.setProperty('--vh', `${vh}px`);
-                };
-                
-                setViewportHeight();
-                window.addEventListener('resize', setViewportHeight);
-                window.addEventListener('orientationchange', setViewportHeight);
-            }
-        }
     }
     
     shuffleArray(array) {
