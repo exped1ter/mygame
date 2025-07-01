@@ -211,8 +211,9 @@ class MicrobiologyDragDropGame {
             }
         });
         
-        // Enable/disable buttons
-        startBtn.disabled = enabled;
+        // Enable/disable buttons based on game state
+        // Start button should only be enabled when game is NOT running
+        startBtn.disabled = this.gameRunning;
         resetBtn.disabled = !enabled;
         hintBtn.disabled = !enabled;
     }
@@ -631,6 +632,7 @@ class MicrobiologyDragDropGame {
                 
                 // Temporarily disable interactions during level transition
                 this.setGameState(false);
+                this.updateButtonStates(); // Ensure start button stays disabled
                 
                 // Show level completion message
                 this.showFeedback(`🎉 LEVEL ${this.level - 1} COMPLETE! 🎉`, "correct");
@@ -788,6 +790,24 @@ class MicrobiologyDragDropGame {
         document.getElementById('score').textContent = this.score;
         document.getElementById('lives').textContent = this.lives;
         document.getElementById('level').textContent = this.level;
+        
+        // Update button states
+        this.updateButtonStates();
+    }
+    
+    updateButtonStates() {
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const hintBtn = document.getElementById('hintBtn');
+        
+        // Start button should only be enabled when game is NOT running
+        startBtn.disabled = this.gameRunning;
+        
+        // Reset and hint buttons should be enabled when game is running and interactions are enabled
+        const organismCards = document.querySelectorAll('.organism-card');
+        const hasActiveCards = organismCards.length > 0 && !organismCards[0].classList.contains('disabled');
+        resetBtn.disabled = !this.gameRunning || !hasActiveCards;
+        hintBtn.disabled = !this.gameRunning || !hasActiveCards;
     }
     
     shuffleArray(array) {
